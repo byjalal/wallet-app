@@ -2197,13 +2197,12 @@ window._logoutOwner = function() {
   state.isGuestMode = true;
   sessionStorage.removeItem('wallet_session_active');
   try { window._stopFirebaseListener(); } catch (err) { console.error('[Auth] stop listener error:', err); }
-  console.log('[Auth] listener stopped, updating UI');
-  updateAuthUI();
-  renderDashboard();
-  renderAccounts();
-  renderBudgetsAndGoals();
-  renderTransactionsTable();
-  console.log('[Auth] logout complete');
+  try {
+    updateAuthUI();
+  } catch (err) {
+    console.error('[Auth] updateAuthUI error:', err);
+  }
+  location.reload();
 };
 
 function updateAuthUI() {
