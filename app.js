@@ -241,6 +241,13 @@ function updateHideNominalUI() {
 }
 
 function initUI() {
+  window.addEventListener('error', function(e) {
+    console.error('[GlobalError]', e.message, 'at', e.filename, 'line', e.lineno, 'col', e.colno, 'error:', e.error);
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    console.error('[UnhandledPromiseRejection]', e.reason);
+  });
+  console.log('[initUI] App initializing...');
   applyTheme();
   updateHideNominalUI();
   updateSyncStatusWidget();
@@ -446,6 +453,7 @@ function renderDashboardAccounts() {
 
 // Render Transactions Table with Filters
 function renderTransactionsTable() {
+  console.log('[renderTransactionsTable] start, total transactions:', state.transactions.length);
   const typeFilterEl = document.getElementById('txTypeFilter');
   const catFilterEl = document.getElementById('txCategoryFilter');
   const accFilterEl = document.getElementById('txAccountFilter');
@@ -471,13 +479,15 @@ function renderTransactionsTable() {
   });
 
   const container = document.getElementById('allTransactionsTable');
-  if (!container) return;
+  if (!container) { console.log('[renderTransactionsTable] container not found!'); return; }
 
   if (filtered.length === 0) {
+    console.log('[renderTransactionsTable] no transactions after filter');
     container.innerHTML = `<div class="text-center text-dim" style="padding: 30px 0; font-size: 13px;">Tidak ada transaksi ditemukan</div>`;
     return;
   }
 
+  console.log('[renderTransactionsTable] rendering', filtered.length, 'transactions');
   container.innerHTML = filtered.map(t => {
     const isTransfer = t.type === 'TRANSFER';
     const cat = isTransfer ? { name: 'Transfer', icon: 'fa-arrow-right-arrow-left', color: '#06b6d4' } : state.getCategoryObj(t.category);
@@ -1585,6 +1595,7 @@ function setupEventListeners() {
 
   document.getElementById('txForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    console.log('[txForm] submit handler started');
     const activeTypeBtn = document.querySelector('.type-btn.active');
     const type = activeTypeBtn ? activeTypeBtn.dataset.type : 'EXPENSE';
 
@@ -1597,38 +1608,51 @@ function setupEventListeners() {
       targetAccount: document.getElementById('txTargetAccount').value,
       note: document.getElementById('txNote').value
     };
+    console.log('[txForm] tx object:', tx);
 
     const savedTx = state.addTransaction(tx);
+    console.log('[txForm] savedTx:', savedTx, 'total tx count:', state.transactions.length);
     txModal.classList.remove('active');
+    console.log('[txForm] modal closed, rendering...');
 
     try {
       renderDashboard();
+      console.log('[txForm] renderDashboard ok');
     } catch (err) {
-      console.error('renderDashboard error:', err);
+      console.error('[txForm] renderDashboard error:', err);
+      alert('Error renderDashboard: ' + err.message);
     }
     try {
       renderTransactionsTable();
+      console.log('[txForm] renderTransactionsTable ok');
     } catch (err) {
-      console.error('renderTransactionsTable error:', err);
+      console.error('[txForm] renderTransactionsTable error:', err);
+      alert('Error renderTransactionsTable: ' + err.message);
     }
     try {
       renderAccounts();
+      console.log('[txForm] renderAccounts ok');
     } catch (err) {
-      console.error('renderAccounts error:', err);
+      console.error('[txForm] renderAccounts error:', err);
+      alert('Error renderAccounts: ' + err.message);
     }
     try {
       renderBudgetsAndGoals();
+      console.log('[txForm] renderBudgetsAndGoals ok');
     } catch (err) {
-      console.error('renderBudgetsAndGoals error:', err);
+      console.error('[txForm] renderBudgetsAndGoals error:', err);
+      alert('Error renderBudgetsAndGoals: ' + err.message);
     }
 
     populateFormDropdowns();
+    console.log('[txForm] populateFormDropdowns ok');
 
     showToast('Transaksi berhasil disimpan', 'success');
 
     if (state.autoSync && state.webhookUrl) {
       syncTransactionToGoogleSheets(savedTx);
     }
+    console.log('[txForm] submit handler done');
   });
 
   // Account Modal
