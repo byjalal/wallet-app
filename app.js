@@ -1584,6 +1584,7 @@ function setupEventListeners() {
     document.getElementById('txForm').reset();
     document.getElementById('txDate').value = getTodayDateStr();
     document.getElementById('txAmountHelper').style.display = 'none';
+    txModal.style.display = '';
     txModal.classList.add('active');
   };
 
@@ -1613,6 +1614,7 @@ function setupEventListeners() {
     const savedTx = state.addTransaction(tx);
     console.log('[txForm] savedTx:', savedTx, 'total tx count:', state.transactions.length);
     txModal.classList.remove('active');
+    txModal.style.display = 'none';
     console.log('[txForm] modal closed, rendering...');
 
     try {
@@ -1647,11 +1649,7 @@ function setupEventListeners() {
     populateFormDropdowns();
     console.log('[txForm] populateFormDropdowns ok');
 
-    showToast('Transaksi berhasil disimpan', 'success');
-
-    if (state.autoSync && state.webhookUrl) {
-      syncTransactionToGoogleSheets(savedTx);
-    }
+    txModal.style.display = '';
     console.log('[txForm] submit handler done');
   });
 
