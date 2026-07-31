@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260731_cleanlabels">
+  <link rel="stylesheet" href="styles.css?v=20260731_desktopfirebase">
   <!-- FontAwesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -308,7 +308,7 @@
         <!-- AKUN PEMILIK & PIN SECURITY -->
         <div class="section-card glass-card mt-4">
           <div class="card-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-            <h3><i class="fa-solid fa-user-shield text-emerald"></i> Akses & Keamanan Pemilik</h3>
+            <h3><i class="fa-solid fa-user-shield text-emerald"></i> Akses & Keamanan</h3>
             <span id="profileAuthBadge" class="badge"></span>
           </div>
           <div id="profileAuthInfo" style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
@@ -316,73 +316,49 @@
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="btn btn-primary" id="profileRegisterLoginBtn" onclick="window._openAuthModal()">
-              <i class="fa-solid fa-key"></i> <span id="profileAuthBtnText">Atur / Login Pemilik</span>
+              <i class="fa-solid fa-key"></i> <span id="profileAuthBtnText">Atur / Login</span>
             </button>
             <button class="btn btn-secondary" id="profileLogoutBtn" onclick="window._logoutOwner()" style="display: none;">
-              <i class="fa-solid fa-right-from-bracket"></i> Logout Pemilik
+              <i class="fa-solid fa-right-from-bracket"></i> Logout
             </button>
           </div>
         </div>
 
-        <!-- FIREBASE REALTIME CLOUD DATABASE -->
-        <div class="section-card glass-card mt-4 owner-only">
-          <div class="card-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-            <h3><i class="fa-solid fa-fire text-rose"></i> Firebase Cloud Database (Realtime Sync 24/7)</h3>
-            <span id="firebaseStatusBadge" class="badge badge-warning">Nonaktif</span>
-          </div>
-          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
-            Hubungkan dengan Google Firebase agar data keuangan tersimpan aman di cloud dan tersinkronisasi otomatis secara realtime di semua HP/Laptop Anda.
-          </p>
-
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block;">Firebase Config / Database URL</label>
-            <textarea id="firebaseConfigInput" placeholder='Tempelkan Firebase Config / Database URL di sini (Contoh: https://nama-app-default-rtdb.firebaseio.com)' rows="3" style="width: 100%; padding: 10px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 12px; font-family: monospace;"></textarea>
-          </div>
-
-          <div style="display: flex; gap: 10px;">
-            <button class="btn btn-primary" id="saveFirebaseBtn" onclick="window._saveFirebaseConfig()">
-              <i class="fa-solid fa-cloud-arrow-up"></i> Simpan & Hubungkan Firebase
-            </button>
-            <button class="btn btn-secondary" id="disconnectFirebaseBtn" onclick="window._disconnectFirebase()" style="display: none;">
-              <i class="fa-solid fa-plug-circle-xmark"></i> Putuskan Firebase
-            </button>
-          </div>
-        </div>
-
-        <!-- TEMA -->
+        <!-- PREFERENSI TAMPILAN & MATA UANG -->
         <div class="section-card glass-card mt-4">
           <div class="card-header" style="margin-bottom: 16px;">
-            <h3><i class="fa-solid fa-palette text-amber"></i> Tampilan Tema</h3>
+            <h3><i class="fa-solid fa-sliders text-amber"></i> Tampilan & Preferensi</h3>
           </div>
-          <div class="theme-settings" style="display: flex; gap: 12px;">
-            <button class="btn btn-secondary" id="profileThemeBtnDark" data-theme="dark">
-              <i class="fa-solid fa-moon"></i> Dark Mode
-            </button>
-            <button class="btn btn-secondary" id="profileThemeBtnLight" data-theme="light">
-              <i class="fa-solid fa-sun text-amber"></i> Light Mode
-            </button>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+            <div>
+              <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Tema Aplikasi</label>
+              <div class="theme-settings" style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" id="profileThemeBtnDark" data-theme="dark" style="flex: 1; justify-content: center;">
+                  <i class="fa-solid fa-moon"></i> Dark
+                </button>
+                <button class="btn btn-secondary" id="profileThemeBtnLight" data-theme="light" style="flex: 1; justify-content: center;">
+                  <i class="fa-solid fa-sun text-amber"></i> Light
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Mata Uang Utama</label>
+              <div class="currency-selector" style="display: flex; align-items: center; gap: 10px;">
+                <select id="currencySelect" style="width: 100%; background: var(--bg-card); border: 1px solid var(--glass-border); padding: 10px 12px; border-radius: var(--radius-md); color: var(--text-main); font-size: 14px;">
+                  <option value="IDR">IDR - Rupiah (Rp)</option>
+                  <option value="USD">USD - Dollar ($)</option>
+                  <option value="EUR">EUR - Euro (€)</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- MATA UANG -->
-        <div class="section-card glass-card mt-4">
-          <div class="card-header" style="margin-bottom: 16px;">
-            <h3><i class="fa-solid fa-globe text-cyan"></i> Mata Uang</h3>
-          </div>
-          <div class="currency-selector" style="display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-globe" style="font-size: 16px; color: var(--text-muted);"></i>
-            <select id="currencySelect" style="flex: 1; background: var(--bg-card); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: var(--radius-md); color: var(--text-main); font-size: 14px;">
-              <option value="IDR">IDR - Rupiah (Rp)</option>
-              <option value="USD">USD - Dollar ($)</option>
-              <option value="EUR">EUR - Euro (€)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- KELOLA KATEGORI -->
+        <!-- KELOLA KATEGORI (OWNER ONLY) -->
         <div class="section-card glass-card mt-4 owner-only">
           <div class="card-header" style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
-            <h3><i class="fa-solid fa-tags text-violet"></i> Kelola Kategori Transaksi</h3>
+            <h3><i class="fa-solid fa-tags text-violet"></i> Kategori Transaksi</h3>
             <button class="btn btn-sm btn-primary" id="openAddCategoryBtn">
               <i class="fa-solid fa-plus"></i> Tambah
             </button>
@@ -396,10 +372,35 @@
           </div>
         </div>
 
+        <!-- FIREBASE REALTIME CLOUD DATABASE (DESKTOP ONLY & OWNER ONLY) -->
+        <div class="section-card glass-card mt-4 owner-only desktop-only" id="firebaseSectionCard">
+          <div class="card-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <h3><i class="fa-solid fa-fire text-rose"></i> Firebase Cloud Database (Sync 24/7)</h3>
+            <span id="firebaseStatusBadge" class="badge badge-warning">Nonaktif</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
+            Hubungkan dengan Google Firebase agar data tersimpan aman di cloud dan tersinkronisasi otomatis di semua HP/Laptop Anda.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block;">Firebase Config / Database URL</label>
+            <textarea id="firebaseConfigInput" placeholder='Tempelkan Firebase Config / Database URL di sini (Contoh: https://nama-app-default-rtdb.firebaseio.com)' rows="3" style="width: 100%; padding: 10px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 12px; font-family: monospace;"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" id="saveFirebaseBtn" onclick="window._saveFirebaseConfig()">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Simpan & Hubungkan
+            </button>
+            <button class="btn btn-secondary" id="disconnectFirebaseBtn" onclick="window._disconnectFirebase()" style="display: none;">
+              <i class="fa-solid fa-plug-circle-xmark"></i> Putuskan
+            </button>
+          </div>
+        </div>
+
         <!-- SYNC STATUS -->
         <div class="section-card glass-card mt-4 owner-only">
           <div class="card-header" style="margin-bottom: 16px;">
-            <h3><i class="fa-solid fa-cloud text-cyan"></i> Status Sinkronisasi</h3>
+            <h3><i class="fa-solid fa-cloud text-cyan"></i> Status Sinkronisasi Google Sheets</h3>
           </div>
           <div class="sync-status-card" id="syncStatusWidget" style="margin: 0;">
             <div class="status-indicator offline"></div>
@@ -932,6 +933,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="app.js?v=20260731_cleanlabels"></script>
+  <script src="app.js?v=20260731_desktopfirebase"></script>
 </body>
 </html>

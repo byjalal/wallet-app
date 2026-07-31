@@ -1945,3 +1945,10 @@ body.guest-mode .tx-detail-content .icon-btn-sm[title*="Hapus"] {
 body.guest-mode #guestModeBanner {
   display: flex !important;
 }
+
+/* Desktop Only Responsive Controls */
+@media (max-width: 767px) {
+  .desktop-only {
+    display: none !important;
+  }
+}

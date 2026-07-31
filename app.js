@@ -2113,7 +2113,12 @@ function updateAuthUI() {
 
   if (state.isLoggedIn) {
     document.body.classList.remove('guest-mode');
-    document.querySelectorAll('.owner-only').forEach(el => el.style.setProperty('display', 'block', 'important'));
+    document.querySelectorAll('.owner-only:not(.desktop-only)').forEach(el => el.style.setProperty('display', 'block', 'important'));
+    if (window.innerWidth >= 768) {
+      document.querySelectorAll('.owner-only.desktop-only').forEach(el => el.style.setProperty('display', 'block', 'important'));
+    } else {
+      document.querySelectorAll('.desktop-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
+    }
     if (guestModeBanner) guestModeBanner.style.display = 'none';
 
     if (headerStatus) {
