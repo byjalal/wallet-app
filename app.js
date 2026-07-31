@@ -262,6 +262,7 @@ function initUI() {
   populateFormDropdowns();
   setupEventListeners();
   window._initFirebaseSync();
+  if (_isAdmin() && state.isLoggedIn) window._loadAdminUsers();
 
   if (state.isLoggedIn && window._syncOnLogin) {
     window._syncOnLogin().then(() => {
@@ -2018,6 +2019,14 @@ function setupEventListeners() {
         return;
       }
 
+      if (window._authFormMode === 'REGISTER' && !_isAdmin()) {
+        if (errorMsg) {
+          errorMsg.style.display = 'block';
+          errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Pendaftaran hanya bisa dilakukan oleh Admin. Hubungi Admin untuk dibuatkan akun.';
+        }
+        return;
+      }
+
       if (window._authFormMode === 'REGISTER') {
         const result = await window._checkUsernameAvailable(username);
         if (!result.available) {
@@ -2183,7 +2192,7 @@ window._openAuthModal = function() {
   if (usernameInput) usernameInput.value = state.username || '';
   if (passcodeInput) passcodeInput.value = '';
 
-  if (!state.isRegistered) {
+  if (_isAdmin() && !state.isRegistered) {
     window._authFormMode = 'REGISTER';
   } else {
     window._authFormMode = 'LOGIN';
@@ -2222,6 +2231,8 @@ window._updateAuthFormUI = function() {
     if (submitBtnText) submitBtnText.textContent = 'Masuk';
     if (toggleBtn) toggleBtn.textContent = 'Belum punya PIN? Daftar';
   }
+
+  if (toggleBtn) toggleBtn.style.display = _isAdmin() ? '' : 'none';
 };
 
 window._enterGuestMode = function() {
@@ -2287,9 +2298,21 @@ function updateAuthUI() {
 
     if (registerLoginBtnText) registerLoginBtnText.textContent = 'Ubah Username / PIN';
     if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+
+    const adminPanel = document.getElementById('adminPanelSection');
+    if (adminPanel) {
+      if (_isAdmin()) {
+        adminPanel.style.setProperty('display', 'block', 'important');
+        window._loadAdminUsers();
+      } else {
+        adminPanel.style.setProperty('display', 'none', 'important');
+      }
+    }
   } else {
     document.body.classList.add('guest-mode');
     document.querySelectorAll('.owner-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
+    const adminPanel = document.getElementById('adminPanelSection');
+    if (adminPanel) adminPanel.style.setProperty('display', 'none', 'important');
     if (guestModeBanner) guestModeBanner.style.display = 'flex';
 
     if (headerStatus) {
@@ -2532,6 +2555,116 @@ window._disconnectFirebase = function() {
     localStorage.removeItem('wallet_firebase_config');
     window._stopFirebaseListener();
     window._initFirebaseSync();
+  }
+};
+
+// ==========================================
+// ADMIN PANEL (Kelola Pengguna)
+// ==========================================
+const ADMIN_USERNAMES = ['Byjalal'];
+
+function _isAdmin(username) {
+  const u = (username || state.username || '').trim().toLowerCase();
+  return ADMIN_USERNAMES.some(a => a.toLowerCase() === u);
+}
+
+window._loadAdminUsers = async function() {
+  const listEl = document.getElementById('adminUserList');
+  if (!listEl || !_firebaseDb || !_isAdmin()) return;
+
+  listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Memuat daftar pengguna...</div>';
+
+  try {
+    const snap = await _firebaseDb.ref('users').once('value');
+    const users = snap.val() || {};
+    const keys = Object.keys(users);
+
+    if (!keys.length) {
+      listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Belum ada pengguna terdaftar.</div>';
+      return;
+    }
+
+    listEl.innerHTML = keys.map(u => {
+      const info = users[u].info || {};
+      const wd = users[u].wallet_data || {};
+      const txCount = (wd.transactions || []).length;
+      const registeredAt = info.registeredAt ? new Date(info.registeredAt).toLocaleString('id-ID') : '—';
+      const updatedAt = wd.updatedAt ? new Date(wd.updatedAt).toLocaleString('id-ID') : '—';
+      const isAdminUser = _isAdmin(u);
+      const safeName = String(u).replace(/[^a-zA-Z0-9_-]/g, '');
+      return `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--bg-card); border:1px solid var(--glass-border); border-radius:var(--radius-md); padding:10px 12px;">
+          <div style="min-width:0;">
+            <div style="font-weight:600; color:var(--text-main); font-size:14px;">
+              <i class="fa-solid fa-user"></i> ${u}
+              ${isAdminUser ? '<span class="badge badge-success" style="margin-left:6px;">Admin</span>' : ''}
+              ${info.passcode ? '' : '<span class="badge badge-warning" style="margin-left:6px;">Tanpa PIN</span>'}
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              Daftar: ${registeredAt} &middot; ${txCount} transaksi &middot; Update: ${updatedAt}
+            </div>
+          </div>
+          <button class="btn btn-sm btn-danger" onclick="window._adminDeleteUser('${safeName}')" ${isAdminUser ? 'disabled title="Tidak bisa menghapus akun admin"' : ''}>
+            <i class="fa-solid fa-trash"></i> Hapus
+          </button>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Admin load users error:', e);
+    listEl.innerHTML = '<div style="color: var(--rose); font-size: 13px;">Gagal memuat daftar pengguna.</div>';
+  }
+};
+
+window._adminAddUser = async function() {
+  const uInput = document.getElementById('adminNewUsername');
+  const pInput = document.getElementById('adminNewPin');
+  const msg = document.getElementById('adminAddMsg');
+  if (!_isAdmin() || !_firebaseDb || !uInput || !pInput || !msg) return;
+
+  const username = uInput.value.trim();
+  const passcode = pInput.value.trim();
+
+  if (!username || !/^[0-9]{4,6}$/.test(passcode)) {
+    msg.textContent = 'Username dan PIN (4-6 digit angka) wajib diisi.';
+    msg.style.color = 'var(--rose)';
+    return;
+  }
+
+  try {
+    const snap = await _firebaseDb.ref('users/' + username + '/info').once('value');
+    if (snap.exists()) {
+      msg.textContent = 'Username "' + username + '" sudah terpakai.';
+      msg.style.color = 'var(--rose)';
+      return;
+    }
+
+    await _firebaseDb.ref('users/' + username + '/info').set({
+      registeredAt: firebase.database.ServerValue.TIMESTAMP,
+      passcode: passcode
+    });
+
+    msg.textContent = 'Pengguna "' + username + '" berhasil dibuat.';
+    msg.style.color = '#10b981';
+    uInput.value = '';
+    pInput.value = '';
+    window._loadAdminUsers();
+  } catch (e) {
+    console.error('Admin add user error:', e);
+    msg.textContent = 'Gagal membuat pengguna.';
+    msg.style.color = 'var(--rose)';
+  }
+};
+
+window._adminDeleteUser = function(username) {
+  if (!_isAdmin() || !_firebaseDb) return;
+  if (_isAdmin(username)) {
+    alert('Tidak bisa menghapus akun admin.');
+    return;
+  }
+  if (confirm('Hapus pengguna "' + username + '" beserta seluruh datanya? Tindakan ini tidak bisa dibatalkan.')) {
+    _firebaseDb.ref('users/' + username).remove()
+      .then(() => window._loadAdminUsers())
+      .catch(e => console.error('Admin delete user error:', e));
   }
 };
 
