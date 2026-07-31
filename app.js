@@ -1995,15 +1995,38 @@ function setupEventListeners() {
   // Auth Form Listeners
   const authForm = document.getElementById('authForm');
   if (authForm) {
-    authForm.addEventListener('submit', (e) => {
+    authForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('authUsername').value.trim();
       const passcode = document.getElementById('authPasscode').value.trim();
       const errorMsg = document.getElementById('authErrorMsg');
 
-      if (!username || !passcode) return;
+      if (!username || !passcode) {
+        if (errorMsg) {
+          errorMsg.style.display = 'block';
+          errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Username dan PIN harus diisi.';
+        }
+        return;
+      }
 
       if (window._authFormMode === 'REGISTER') {
+        const result = await window._checkUsernameAvailable(username);
+        if (!result.available) {
+          if (errorMsg) {
+            errorMsg.style.display = 'block';
+            errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + result.message;
+          }
+          return;
+        }
+
+        try {
+          if (_firebaseDb) {
+            await _firebaseDb.ref('users/' + username + '/info').set({ registeredAt: Date.now() });
+          }
+        } catch (err) {
+          console.error('Firebase register error:', err);
+        }
+
         state.username = username;
         state.passcode = passcode;
         state.isRegistered = true;
@@ -2011,6 +2034,7 @@ function setupEventListeners() {
         state.isGuestMode = false;
         state.save();
         sessionStorage.setItem('wallet_session_active', 'true');
+        window._startFirebaseListener();
         if (errorMsg) errorMsg.style.display = 'none';
         window._closeAuthModal();
         updateAuthUI();
@@ -2023,6 +2047,7 @@ function setupEventListeners() {
           state.isLoggedIn = true;
           state.isGuestMode = false;
           sessionStorage.setItem('wallet_session_active', 'true');
+          window._startFirebaseListener();
           if (errorMsg) errorMsg.style.display = 'none';
           window._closeAuthModal();
           updateAuthUI();
@@ -2161,6 +2186,7 @@ window._enterGuestMode = function() {
   state.isLoggedIn = false;
   state.isGuestMode = true;
   sessionStorage.removeItem('wallet_session_active');
+  window._stopFirebaseListener();
   window._closeAuthModal();
   updateAuthUI();
 };
@@ -2169,6 +2195,7 @@ window._logoutOwner = function() {
   state.isLoggedIn = false;
   state.isGuestMode = true;
   sessionStorage.removeItem('wallet_session_active');
+  window._stopFirebaseListener();
   updateAuthUI();
   renderDashboard();
   renderAccounts();
@@ -2251,8 +2278,92 @@ function updateAuthUI() {
 // Firebase Realtime Cloud Sync Logic
 let _firebaseDb = null;
 let _isFirebaseRemoteUpdate = false;
+let _firebaseUnsubscribe = null;
+
+function _getFirebaseUserPath() {
+  if (!state.isLoggedIn || !state.username) return null;
+  return 'users/' + state.username + '/wallet_data';
+}
+
+window._startFirebaseListener = function() {
+  const path = _getFirebaseUserPath();
+  if (!path || !_firebaseDb) return;
+
+  if (_firebaseUnsubscribe) {
+    _firebaseUnsubscribe();
+    _firebaseUnsubscribe = null;
+  }
+
+  _firebaseUnsubscribe = _firebaseDb.ref(path).on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const remoteUpdate = data.updatedAt || 0;
+      const localUpdate = state._lastUpdate || 0;
+      if (remoteUpdate <= localUpdate) {
+        console.log('[Firebase] skipping remote update - local is newer (remote:', remoteUpdate, 'local:', localUpdate, ')');
+        return;
+      }
+      console.log('[Firebase] applying remote update (remote:', remoteUpdate, 'local:', localUpdate, ')');
+      _isFirebaseRemoteUpdate = true;
+      if (data.accounts) state.accounts = data.accounts;
+      if (data.transactions) state.transactions = data.transactions;
+      if (data.budgets) state.budgets = data.budgets;
+      if (data.goals) state.goals = data.goals;
+      if (data.categories) state.categories = data.categories;
+      state._lastUpdate = remoteUpdate;
+
+      state.save();
+      _isFirebaseRemoteUpdate = false;
+
+      renderDashboard();
+      renderAccounts();
+      renderBudgetsAndGoals();
+      renderTransactionsTable();
+    }
+  });
+};
+
+window._stopFirebaseListener = function() {
+  if (_firebaseUnsubscribe) {
+    _firebaseUnsubscribe();
+    _firebaseUnsubscribe = null;
+  }
+};
+
+window._syncStateToFirebase = function() {
+  if (_isFirebaseRemoteUpdate || !_firebaseDb || !state.isLoggedIn) return;
+  const path = _getFirebaseUserPath();
+  if (!path) return;
+  try {
+    _firebaseDb.ref(path).set({
+      accounts: state.accounts,
+      transactions: state.transactions,
+      budgets: state.budgets,
+      goals: state.goals,
+      categories: state.categories,
+      updatedAt: Date.now()
+    });
+  } catch (e) {
+    console.error('Firebase sync error:', e);
+  }
+};
+
+window._checkUsernameAvailable = async function(username) {
+  if (!_firebaseDb) return { available: true };
+  try {
+    const snapshot = await _firebaseDb.ref('users/' + username + '/info').once('value');
+    if (snapshot.exists()) {
+      return { available: false, message: 'Username "' + username + '" sudah digunakan. Silakan pilih username lain.' };
+    }
+    return { available: true };
+  } catch (e) {
+    console.error('Firebase username check error:', e);
+    return { available: true };
+  }
+};
 
 window._initFirebaseSync = function() {
+  window._stopFirebaseListener();
   const configRaw = localStorage.getItem('wallet_firebase_config');
   const badge = document.getElementById('firebaseStatusBadge');
   const input = document.getElementById('firebaseConfigInput');
@@ -2261,6 +2372,7 @@ window._initFirebaseSync = function() {
   if (input && configRaw) input.value = configRaw;
 
   if (!configRaw || typeof firebase === 'undefined') {
+    _firebaseDb = null;
     if (badge) {
       badge.textContent = 'Nonaktif';
       badge.className = 'badge badge-warning';
@@ -2291,56 +2403,14 @@ window._initFirebaseSync = function() {
       badge.className = 'badge badge-success';
     }
 
-    // Listen to realtime changes from Firebase Cloud
-    _firebaseDb.ref('wallet_data').on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const remoteUpdate = data.updatedAt || 0;
-        const localUpdate = state._lastUpdate || 0;
-        if (remoteUpdate <= localUpdate) {
-          console.log('[Firebase] skipping remote update - local data is newer/equal (remote:', remoteUpdate, 'local:', localUpdate, ')');
-          return;
-        }
-        console.log('[Firebase] applying remote update (remote:', remoteUpdate, 'local:', localUpdate, ')');
-        _isFirebaseRemoteUpdate = true;
-        if (data.accounts) state.accounts = data.accounts;
-        if (data.transactions) state.transactions = data.transactions;
-        if (data.budgets) state.budgets = data.budgets;
-        if (data.goals) state.goals = data.goals;
-        if (data.categories) state.categories = data.categories;
-        state._lastUpdate = remoteUpdate;
-
-        state.save();
-        _isFirebaseRemoteUpdate = false;
-
-        renderDashboard();
-        renderAccounts();
-        renderBudgetsAndGoals();
-        renderTransactionsTable();
-      }
-    });
+    window._startFirebaseListener();
   } catch (err) {
     console.error('Firebase init error:', err);
+    _firebaseDb = null;
     if (badge) {
       badge.textContent = 'Error Connection';
       badge.className = 'badge badge-danger';
     }
-  }
-};
-
-window._syncStateToFirebase = function() {
-  if (_isFirebaseRemoteUpdate || !_firebaseDb || !state.isLoggedIn) return;
-  try {
-    _firebaseDb.ref('wallet_data').set({
-      accounts: state.accounts,
-      transactions: state.transactions,
-      budgets: state.budgets,
-      goals: state.goals,
-      categories: state.categories,
-      updatedAt: Date.now()
-    });
-  } catch (e) {
-    console.error('Firebase sync error:', e);
   }
 };
 
@@ -2360,6 +2430,7 @@ window._saveFirebaseConfig = function() {
 window._disconnectFirebase = function() {
   if (confirm('Apakah Anda yakin ingin memutuskan koneksi Firebase?')) {
     localStorage.removeItem('wallet_firebase_config');
+    window._stopFirebaseListener();
     _firebaseDb = null;
     alert('Koneksi Firebase diputuskan.');
     window._initFirebaseSync();
