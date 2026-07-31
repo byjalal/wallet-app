@@ -263,6 +263,15 @@ function initUI() {
   setupEventListeners();
   window._initFirebaseSync();
 
+  if (state.isLoggedIn && window._syncOnLogin) {
+    window._syncOnLogin().then(() => {
+      renderDashboard();
+      renderTransactionsTable();
+      renderAccounts();
+      renderBudgetsAndGoals();
+    });
+  }
+
   if (!state.isLoggedIn) {
     window._openAuthModal();
   }
@@ -2021,7 +2030,10 @@ function setupEventListeners() {
 
         try {
           if (_firebaseDb) {
-            await _firebaseDb.ref('users/' + username + '/info').set({ registeredAt: Date.now() });
+            await _firebaseDb.ref('users/' + username + '/info').set({
+              registeredAt: firebase.database.ServerValue.TIMESTAMP,
+              passcode: passcode
+            });
           }
         } catch (err) {
           console.error('Firebase register error:', err);
@@ -2032,8 +2044,8 @@ function setupEventListeners() {
         state.isRegistered = true;
         state.isLoggedIn = true;
         state.isGuestMode = false;
-        state.save();
         sessionStorage.setItem('wallet_session_active', 'true');
+        await window._syncOnLogin();
         window._startFirebaseListener();
         if (errorMsg) errorMsg.style.display = 'none';
         window._closeAuthModal();
@@ -2043,10 +2055,32 @@ function setupEventListeners() {
         renderBudgetsAndGoals();
         renderTransactionsTable();
       } else {
-        if (username.toLowerCase() === state.username.toLowerCase() && passcode === state.passcode) {
+        let credentialsOk = false;
+
+        if (_firebaseDb) {
+          try {
+            const snapshot = await _firebaseDb.ref('users/' + username + '/info').once('value');
+            const info = snapshot.val();
+            credentialsOk = !!(info && info.passcode && info.passcode === passcode);
+          } catch (err) {
+            console.error('Firebase login check error:', err);
+            credentialsOk = false;
+          }
+          if (!credentialsOk) {
+            credentialsOk = username.toLowerCase() === state.username.toLowerCase() && passcode === state.passcode;
+          }
+        } else {
+          credentialsOk = username.toLowerCase() === state.username.toLowerCase() && passcode === state.passcode;
+        }
+
+        if (credentialsOk) {
+          state.username = username;
+          state.passcode = passcode;
+          state.isRegistered = true;
           state.isLoggedIn = true;
           state.isGuestMode = false;
           sessionStorage.setItem('wallet_session_active', 'true');
+          await window._syncOnLogin();
           window._startFirebaseListener();
           if (errorMsg) errorMsg.style.display = 'none';
           window._closeAuthModal();
@@ -2281,6 +2315,7 @@ function updateAuthUI() {
 let _firebaseDb = null;
 let _isFirebaseRemoteUpdate = false;
 let _firebaseUnsubscribe = null;
+let _pendingSyncId = null;
 
 function _getFirebaseUserPath() {
   if (!state.isLoggedIn || !state.username) return null;
@@ -2298,30 +2333,40 @@ window._startFirebaseListener = function() {
 
   _firebaseUnsubscribe = _firebaseDb.ref(path).on('value', (snapshot) => {
     const data = snapshot.val();
-    if (data) {
-      const remoteUpdate = data.updatedAt || 0;
-      const localUpdate = state._lastUpdate || 0;
-      if (remoteUpdate <= localUpdate) {
-        console.log('[Firebase] skipping remote update - local is newer (remote:', remoteUpdate, 'local:', localUpdate, ')');
-        return;
-      }
-      console.log('[Firebase] applying remote update (remote:', remoteUpdate, 'local:', localUpdate, ')');
-      _isFirebaseRemoteUpdate = true;
-      if (data.accounts) state.accounts = data.accounts;
-      if (data.transactions) state.transactions = data.transactions;
-      if (data.budgets) state.budgets = data.budgets;
-      if (data.goals) state.goals = data.goals;
-      if (data.categories) state.categories = data.categories;
-      state._lastUpdate = remoteUpdate;
+    if (!data) return;
 
-      state.save();
-      _isFirebaseRemoteUpdate = false;
-
-      renderDashboard();
-      renderAccounts();
-      renderBudgetsAndGoals();
-      renderTransactionsTable();
+    if (_pendingSyncId && data.syncId === _pendingSyncId) {
+      console.log('[Firebase] echo of own push, normalizing _lastUpdate');
+      _pendingSyncId = null;
+      state._lastUpdate = data.updatedAt || 0;
+      localStorage.setItem('wallet_last_update', state._lastUpdate);
+      return;
     }
+
+    const remoteUpdate = data.updatedAt || 0;
+    const localUpdate = state._lastUpdate || 0;
+    if (remoteUpdate <= localUpdate) {
+      console.log('[Firebase] skipping remote update - local is newer/equal (remote:', remoteUpdate, 'local:', localUpdate, ')');
+      return;
+    }
+    console.log('[Firebase] applying remote update (remote:', remoteUpdate, 'local:', localUpdate, ')');
+    _isFirebaseRemoteUpdate = true;
+    if (data.accounts) state.accounts = data.accounts;
+    if (data.transactions) state.transactions = data.transactions;
+    if (data.budgets) state.budgets = data.budgets;
+    if (data.goals) state.goals = data.goals;
+    if (data.categories) state.categories = data.categories;
+
+    state.save();
+    state._lastUpdate = remoteUpdate;
+    localStorage.setItem('wallet_last_update', remoteUpdate);
+
+    _isFirebaseRemoteUpdate = false;
+
+    renderDashboard();
+    renderAccounts();
+    renderBudgetsAndGoals();
+    renderTransactionsTable();
   });
 };
 
@@ -2330,6 +2375,7 @@ window._stopFirebaseListener = function() {
     _firebaseUnsubscribe();
     _firebaseUnsubscribe = null;
   }
+  _pendingSyncId = null;
 };
 
 window._syncStateToFirebase = function() {
@@ -2337,16 +2383,58 @@ window._syncStateToFirebase = function() {
   const path = _getFirebaseUserPath();
   if (!path) return;
   try {
+    _pendingSyncId = 'sync-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
     _firebaseDb.ref(path).set({
       accounts: state.accounts,
       transactions: state.transactions,
       budgets: state.budgets,
       goals: state.goals,
       categories: state.categories,
-      updatedAt: Date.now()
+      updatedAt: firebase.database.ServerValue.TIMESTAMP,
+      syncId: _pendingSyncId
     });
   } catch (e) {
     console.error('Firebase sync error:', e);
+  }
+};
+
+window._syncOnLogin = async function() {
+  const path = _getFirebaseUserPath();
+  if (!path || !_firebaseDb) {
+    state.save();
+    return;
+  }
+
+  try {
+    const snapshot = await _firebaseDb.ref(path).once('value');
+    const data = snapshot.val();
+
+    if (data && (data.transactions || data.accounts)) {
+      const remoteUpdate = data.updatedAt || 0;
+      const localUpdate = state._lastUpdate || 0;
+      if (remoteUpdate <= localUpdate && state.transactions.length > 0) {
+        console.log('[Firebase] _syncOnLogin: local is newer/equal, keeping local data');
+        state.save();
+        return;
+      }
+      console.log('[Firebase] _syncOnLogin: loading existing cloud data');
+      _isFirebaseRemoteUpdate = true;
+      if (data.accounts) state.accounts = data.accounts;
+      if (data.transactions) state.transactions = data.transactions;
+      if (data.budgets) state.budgets = data.budgets;
+      if (data.goals) state.goals = data.goals;
+      if (data.categories) state.categories = data.categories;
+      state.save();
+      state._lastUpdate = remoteUpdate;
+      localStorage.setItem('wallet_last_update', state._lastUpdate);
+      _isFirebaseRemoteUpdate = false;
+    } else {
+      console.log('[Firebase] _syncOnLogin: no cloud data, pushing local data');
+      state.save();
+    }
+  } catch (e) {
+    console.error('Firebase sync on login error:', e);
+    state.save();
   }
 };
 
