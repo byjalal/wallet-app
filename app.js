@@ -2460,16 +2460,18 @@ window._checkUsernameAvailable = async function(username) {
   }
 };
 
+const DEFAULT_FIREBASE_CONFIG = 'https://wallet-app-3e58a-default-rtdb.firebaseio.com/';
+
 window._initFirebaseSync = function() {
   window._stopFirebaseListener();
-  const configRaw = localStorage.getItem('wallet_firebase_config');
+  const configRaw = localStorage.getItem('wallet_firebase_config') || DEFAULT_FIREBASE_CONFIG;
   const badge = document.getElementById('firebaseStatusBadge');
   const input = document.getElementById('firebaseConfigInput');
   const disconnectBtn = document.getElementById('disconnectFirebaseBtn');
 
   if (input && configRaw) input.value = configRaw;
 
-  if (!configRaw || typeof firebase === 'undefined') {
+  if (typeof firebase === 'undefined') {
     _firebaseDb = null;
     if (badge) {
       badge.textContent = 'Nonaktif';
@@ -2526,11 +2528,9 @@ window._saveFirebaseConfig = function() {
 };
 
 window._disconnectFirebase = function() {
-  if (confirm('Apakah Anda yakin ingin memutuskan koneksi Firebase?')) {
+  if (confirm('Hapus config kustom ini dan kembali ke koneksi bawaan aplikasi?')) {
     localStorage.removeItem('wallet_firebase_config');
     window._stopFirebaseListener();
-    _firebaseDb = null;
-    alert('Koneksi Firebase diputuskan.');
     window._initFirebaseSync();
   }
 };
