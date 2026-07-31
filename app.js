@@ -500,17 +500,81 @@ function renderTransactionsTable() {
     return;
   }
 
-  console.log('[renderTransactionsTable] rendering', filtered.length, 'transactions');
-  container.innerHTML = filtered.map(t => {
-    const isTransfer = t.type === 'TRANSFER';
-    const cat = isTransfer ? { name: 'Transfer', icon: 'fa-arrow-right-arrow-left', color: '#06b6d4' } : state.getCategoryObj(t.category);
-    const acc = state.getAccountObj(t.account);
-    const targetAcc = isTransfer && t.targetAccount ? state.getAccountObj(t.targetAccount) : null;
-    const typeClass = t.type.toLowerCase();
-    const sign = t.type === 'INCOME' ? '+' : (t.type === 'EXPENSE' ? '-' : '');
-    const signStr = sign ? sign + ' ' : '';
+  const groups = {};
+  filtered.forEach(t => {
+    const mk = t.date.substring(0, 7);
+    if (!groups[mk]) groups[mk] = [];
+    groups[mk].push(t);
+  });
+
+  const monthKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  console.log('[renderTransactionsTable] rendering', filtered.length, 'transactions in', monthKeys.length, 'months');
+  container.innerHTML = monthKeys.map((mk, idx) => {
+    const txs = groups[mk];
+    const income = txs.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.amount), 0);
+    const expense = txs.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0);
+    const isOpen = idx === 0;
 
     return `
+      <div class="tx-month-group" style="border-bottom: 1px solid var(--glass-border);">
+        <div class="tx-month-header" onclick="toggleTxMonth('${mk}')" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; cursor: pointer; user-select: none;">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+            <span id="tx-month-chev-${mk}" class="tx-month-chevron" style="color: var(--text-muted); font-size: 12px; transition: transform .2s; flex-shrink: 0; ${isOpen ? '' : 'transform: rotate(-90deg);'}">
+              <i class="fa-solid fa-chevron-down"></i>
+            </span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">${formatMonthKey(mk)}</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                <span style="color: #10b981; font-weight: 600;">+${formatMoney(income)}</span>
+                <span style="margin: 0 5px;">&middot;</span>
+                <span style="color: #f43f5e; font-weight: 600;">-${formatMoney(expense)}</span>
+                <span style="margin: 0 5px;">&middot;</span>
+                ${txs.length} transaksi
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tx-month-body" id="tx-month-${mk}" style="${isOpen ? '' : 'display: none;'}">
+          ${txs.map(t => renderTxItem(t)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function formatMonthKey(mk) {
+  const parts = mk.split('-');
+  if (parts.length !== 2) return mk;
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+  return d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+}
+
+window.toggleTxMonth = function(mk) {
+  const body = document.getElementById('tx-month-' + mk);
+  if (!body) return;
+  const willHide = body.style.display !== 'none';
+  document.querySelectorAll('.tx-month-body').forEach(b => {
+    if (b.id !== 'tx-month-' + mk) b.style.display = 'none';
+  });
+  document.querySelectorAll('.tx-month-chevron').forEach(c => {
+    if (c.id !== 'tx-month-chev-' + mk) c.style.transform = 'rotate(-90deg)';
+  });
+  body.style.display = willHide ? 'none' : '';
+  const chev = document.getElementById('tx-month-chev-' + mk);
+  if (chev) chev.style.transform = willHide ? 'rotate(-90deg)' : '';
+};
+
+function renderTxItem(t) {
+  const isTransfer = t.type === 'TRANSFER';
+  const cat = isTransfer ? { name: 'Transfer', icon: 'fa-arrow-right-arrow-left', color: '#06b6d4' } : state.getCategoryObj(t.category);
+  const acc = state.getAccountObj(t.account);
+  const targetAcc = isTransfer && t.targetAccount ? state.getAccountObj(t.targetAccount) : null;
+  const typeClass = t.type.toLowerCase();
+  const sign = t.type === 'INCOME' ? '+' : (t.type === 'EXPENSE' ? '-' : '');
+  const signStr = sign ? sign + ' ' : '';
+
+  return `
       <div class="tx-item-card" style="border-bottom: 1px solid var(--glass-border);">
         <div class="tx-main-row" onclick="toggleTxDetail('${t.id}')" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; cursor: pointer;">
           <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
@@ -559,7 +623,6 @@ function renderTransactionsTable() {
         </div>
       </div>
     `;
-  }).join('');
 }
 
 window.toggleTxDetail = function(id) {
