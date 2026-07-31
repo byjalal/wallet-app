@@ -2192,15 +2192,18 @@ window._enterGuestMode = function() {
 };
 
 window._logoutOwner = function() {
+  console.log('[Auth] logout triggered');
   state.isLoggedIn = false;
   state.isGuestMode = true;
   sessionStorage.removeItem('wallet_session_active');
-  window._stopFirebaseListener();
+  try { window._stopFirebaseListener(); } catch (err) { console.error('[Auth] stop listener error:', err); }
+  console.log('[Auth] listener stopped, updating UI');
   updateAuthUI();
   renderDashboard();
   renderAccounts();
   renderBudgetsAndGoals();
   renderTransactionsTable();
+  console.log('[Auth] logout complete');
 };
 
 function updateAuthUI() {
