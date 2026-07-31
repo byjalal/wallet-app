@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260731_forcehideowner">
+  <link rel="stylesheet" href="styles.css?v=20260731_cleanlabels">
   <!-- FontAwesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -79,9 +79,9 @@
         <div id="guestModeBanner" class="read-only-banner" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 16px; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--amber);">
           <div style="display: flex; align-items: center; gap: 10px;">
             <i class="fa-solid fa-eye" style="font-size: 16px;"></i>
-            <span><strong>Mode Tamu (Read-Only)</strong> — Pengunjung hanya dapat melihat data. Login sebagai Pemilik untuk mengedit.</span>
+            <span><strong>Mode Tamu (Read-Only)</strong> — Pengunjung hanya dapat melihat data. Login untuk mengedit.</span>
           </div>
-          <button class="btn btn-sm btn-primary" onclick="window._openAuthModal()" style="white-space: nowrap;">Login Pemilik</button>
+          <button class="btn btn-sm btn-primary" onclick="window._openAuthModal()" style="white-space: nowrap;">Login</button>
         </div>
 
         <!-- Stat Cards Carousel -->
@@ -882,24 +882,24 @@
 
   <!-- Login / Register Auth Modal -->
   <div id="authModal" class="modal-overlay">
-    <div class="glass-modal" style="max-width: 420px; width: 90%;">
+    <div class="glass-modal" style="max-width: 400px; width: 90%;">
       <div class="modal-header">
-        <h3 id="authModalTitle"><i class="fa-solid fa-user-shield text-primary"></i> Login Pemilik</h3>
+        <h3 id="authModalTitle"><i class="fa-solid fa-user-shield text-primary"></i> Masuk / Daftar</h3>
         <button class="close-btn" id="closeAuthModalBtn">&times;</button>
       </div>
       <form id="authForm">
         <div class="modal-body" style="padding-top: 4px;">
           <p id="authModalDesc" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">
-            Masukkan Username dan Passcode PIN untuk mengedit data aplikasi.
+            Masukkan Username dan PIN untuk mengedit data, atau gunakan Mode Tamu untuk melihat.
           </p>
 
           <div class="form-group" style="margin-bottom: 14px;">
-            <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Username Pemilik</label>
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Username</label>
             <input type="text" id="authUsername" placeholder="Contoh: Budi" required style="width: 100%; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 15px;">
           </div>
 
           <div class="form-group" style="margin-bottom: 14px;">
-            <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Passcode / PIN Angka</label>
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Passcode / PIN</label>
             <input type="password" id="authPasscode" placeholder="4 - 6 digit angka" inputmode="numeric" pattern="[0-9]*" maxlength="6" required style="width: 100%; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 15px; letter-spacing: 2px;">
           </div>
 
@@ -910,15 +910,15 @@
 
         <div class="modal-footer" style="display: flex; flex-direction: column; gap: 10px;">
           <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="width: 100%;">
-            <i class="fa-solid fa-right-to-bracket"></i> <span id="authSubmitBtnText">Masuk Pemilik</span>
+            <i class="fa-solid fa-right-to-bracket"></i> <span id="authSubmitBtnText">Masuk / Daftar</span>
           </button>
 
           <button type="button" class="btn btn-secondary" id="authGuestBtn" onclick="window._enterGuestMode()" style="width: 100%;">
-            <i class="fa-solid fa-eye"></i> Lihat Saja (Mode Tamu / Read-Only)
+            <i class="fa-solid fa-eye"></i> Mode Tamu
           </button>
 
           <button type="button" id="authToggleModeBtn" onclick="window._toggleAuthFormMode()" style="background: transparent; border: none; color: var(--primary); font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 4px;">
-            Belum punya PIN? Daftar Pemilik Baru
+            Belum punya PIN? Daftar
           </button>
         </div>
       </form>
@@ -932,6 +932,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="app.js?v=20260731_forcehideowner"></script>
+  <script src="app.js?v=20260731_cleanlabels"></script>
 </body>
 </html>

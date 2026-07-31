@@ -2071,16 +2071,16 @@ window._updateAuthFormUI = function() {
   const usernameInput = document.getElementById('authUsername');
 
   if (window._authFormMode === 'REGISTER') {
-    if (title) title.innerHTML = '<i class="fa-solid fa-user-plus text-primary"></i> Daftar Pemilik Baru';
-    if (desc) desc.textContent = 'Buat Username dan PIN 4-6 digit angka untuk mengamankan hak edit data Anda.';
-    if (submitBtnText) submitBtnText.textContent = 'Daftar & Simpan PIN';
-    if (toggleBtn) toggleBtn.textContent = state.isRegistered ? 'Sudah punya PIN? Switch ke Login' : '';
+    if (title) title.innerHTML = '<i class="fa-solid fa-user-plus text-primary"></i> Daftar';
+    if (desc) desc.textContent = 'Buat Username dan PIN 4-6 digit angka untuk mengamankan hak akses edit.';
+    if (submitBtnText) submitBtnText.textContent = 'Daftar';
+    if (toggleBtn) toggleBtn.textContent = state.isRegistered ? 'Sudah punya PIN? Login' : '';
     if (usernameInput) usernameInput.readOnly = false;
   } else {
-    if (title) title.innerHTML = '<i class="fa-solid fa-user-shield text-primary"></i> Login Pemilik';
-    if (desc) desc.textContent = 'Masukkan Username dan Passcode PIN untuk mengedit data aplikasi.';
-    if (submitBtnText) submitBtnText.textContent = 'Masuk Pemilik';
-    if (toggleBtn) toggleBtn.textContent = 'Ubah / Reset Username & PIN Pemilik';
+    if (title) title.innerHTML = '<i class="fa-solid fa-user-shield text-primary"></i> Login';
+    if (desc) desc.textContent = 'Masukkan Username dan PIN untuk mengedit data.';
+    if (submitBtnText) submitBtnText.textContent = 'Masuk';
+    if (toggleBtn) toggleBtn.textContent = 'Belum punya PIN? Daftar';
   }
 };
 
@@ -2148,7 +2148,7 @@ function updateAuthUI() {
         <span class="guest-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
           <i class="fa-solid fa-eye"></i> Mode Tamu
         </span>
-        <button onclick="window._openAuthModal()" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 12px; margin-left: 6px;">Login Pemilik</button>
+        <button onclick="window._openAuthModal()" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 12px; margin-left: 6px;">Login</button>
       `;
     }
 
@@ -2159,13 +2159,13 @@ function updateAuthUI() {
 
     if (profileInfo) {
       if (state.isRegistered) {
-        profileInfo.innerHTML = `Aplikasi dalam <strong>Mode Tamu (Hanya Lihat)</strong>. Login sebagai Pemilik (<strong>${state.username}</strong>) dengan PIN untuk mengedit data.`;
+        profileInfo.innerHTML = `Aplikasi dalam <strong>Mode Tamu (Hanya Lihat)</strong>. Login sebagai <strong>${state.username}</strong> dengan PIN untuk mengedit data.`;
       } else {
-        profileInfo.innerHTML = `Belum ada PIN Pemilik terdaftar. Daftarkan Username & PIN agar hanya Anda yang dapat mengedit data.`;
+        profileInfo.innerHTML = `Belum ada PIN terdaftar. Daftarkan Username & PIN agar hanya Anda yang dapat mengedit data.`;
       }
     }
 
-    if (registerLoginBtnText) registerLoginBtnText.textContent = state.isRegistered ? 'Login Pemilik' : 'Daftar Username & PIN';
+    if (registerLoginBtnText) registerLoginBtnText.textContent = state.isRegistered ? 'Login' : 'Daftar';
     if (logoutBtn) logoutBtn.style.display = 'none';
   }
 }
