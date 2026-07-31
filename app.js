@@ -2039,6 +2039,11 @@ function setupEventListeners() {
           console.error('Firebase register error:', err);
         }
 
+        if (!_firebaseDb) {
+          const proceed = confirm('Sinkronisasi Cloud (Firebase) belum aktif di perangkat ini.\n\nAkun baru ini hanya tersimpan di perangkat ini dan TIDAK akan tersinkron ke HP Anda.\n\nAgar bisa login di semua perangkat: buka Pengaturan → Sinkronisasi Cloud, lalu tempelkan Firebase Config yang sama seperti di HP.\n\nTetap daftar secara lokal?');
+          if (!proceed) return;
+        }
+
         state.username = username;
         state.passcode = passcode;
         state.isRegistered = true;
@@ -2092,7 +2097,10 @@ function setupEventListeners() {
         } else {
           if (errorMsg) {
             errorMsg.style.display = 'block';
-            errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Username atau PIN yang Anda masukkan salah!';
+            const hint = _firebaseDb
+              ? 'Pastikan Username dan PIN sama persis (Username bersifat case-sensitive) dengan yang terdaftar di HP.'
+              : 'Koneksi Cloud (Firebase) belum aktif di perangkat ini. Buka Pengaturan → Sinkronisasi Cloud, tempelkan Firebase Config yang SAMA seperti di HP, lalu coba login lagi.';
+            errorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Username tidak ditemukan atau PIN salah!<br><small style="font-weight: 400;">' + hint + '</small>';
           }
         }
       }
@@ -2206,7 +2214,7 @@ window._updateAuthFormUI = function() {
     if (title) title.innerHTML = '<i class="fa-solid fa-user-plus text-primary"></i> Daftar';
     if (desc) desc.textContent = 'Buat Username dan PIN 4-6 digit angka untuk mengamankan hak akses edit.';
     if (submitBtnText) submitBtnText.textContent = 'Daftar';
-    if (toggleBtn) toggleBtn.textContent = state.isRegistered ? 'Sudah punya PIN? Login' : '';
+    if (toggleBtn) toggleBtn.textContent = 'Sudah punya PIN? Login';
     if (usernameInput) usernameInput.readOnly = false;
   } else {
     if (title) title.innerHTML = '<i class="fa-solid fa-user-shield text-primary"></i> Login';
