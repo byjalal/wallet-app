@@ -83,9 +83,12 @@ class WalletState {
     this.isRegistered = !!(this.username && this.passcode);
     this.isLoggedIn = sessionStorage.getItem('wallet_session_active') === 'true';
     this.isGuestMode = !this.isLoggedIn;
+    this._lastUpdate = parseInt(localStorage.getItem('wallet_last_update')) || Date.now();
   }
 
   save() {
+    this._lastUpdate = Date.now();
+    localStorage.setItem('wallet_last_update', this._lastUpdate);
     localStorage.setItem('wallet_currency', this.currency);
     localStorage.setItem('wallet_accounts', JSON.stringify(this.accounts));
     localStorage.setItem('wallet_categories', JSON.stringify(this.categories));
@@ -2292,12 +2295,20 @@ window._initFirebaseSync = function() {
     _firebaseDb.ref('wallet_data').on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
+        const remoteUpdate = data.updatedAt || 0;
+        const localUpdate = state._lastUpdate || 0;
+        if (remoteUpdate <= localUpdate) {
+          console.log('[Firebase] skipping remote update - local data is newer/equal (remote:', remoteUpdate, 'local:', localUpdate, ')');
+          return;
+        }
+        console.log('[Firebase] applying remote update (remote:', remoteUpdate, 'local:', localUpdate, ')');
         _isFirebaseRemoteUpdate = true;
         if (data.accounts) state.accounts = data.accounts;
         if (data.transactions) state.transactions = data.transactions;
         if (data.budgets) state.budgets = data.budgets;
         if (data.goals) state.goals = data.goals;
         if (data.categories) state.categories = data.categories;
+        state._lastUpdate = remoteUpdate;
 
         state.save();
         _isFirebaseRemoteUpdate = false;
