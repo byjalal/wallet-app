@@ -309,9 +309,12 @@ function updateSyncStatusWidget() {
 
 // Render Dashboard
 function renderDashboard() {
+  const el = (id) => document.getElementById(id);
+
   // Total Balance
   const totalBal = state.accounts.reduce((sum, a) => sum + Number(a.balance), 0);
-  document.getElementById('dashTotalBalance').textContent = formatMoneyMasked(totalBal);
+  const dashTotalBal = el('dashTotalBalance');
+  if (dashTotalBal) dashTotalBal.textContent = formatMoneyMasked(totalBal);
 
   // Monthly Income & Expense
   const currentMonth = new Date().getMonth();
@@ -328,25 +331,38 @@ function renderDashboard() {
   const incTotal = incTxs.reduce((sum, t) => sum + Number(t.amount), 0);
   const expTotal = expTxs.reduce((sum, t) => sum + Number(t.amount), 0);
 
-  document.getElementById('dashMonthlyIncome').textContent = formatMoneyMasked(incTotal);
-  document.getElementById('dashIncomeCount').textContent = `${incTxs.length} transaksi`;
+  const dashMonthlyInc = el('dashMonthlyIncome');
+  const dashIncCount = el('dashIncomeCount');
+  if (dashMonthlyInc) dashMonthlyInc.textContent = formatMoneyMasked(incTotal);
+  if (dashIncCount) dashIncCount.textContent = `${incTxs.length} transaksi`;
 
-  document.getElementById('dashMonthlyExpense').textContent = formatMoneyMasked(expTotal);
-  document.getElementById('dashExpenseCount').textContent = `${expTxs.length} transaksi`;
+  const dashMonthlyExp = el('dashMonthlyExpense');
+  const dashExpCount = el('dashExpenseCount');
+  if (dashMonthlyExp) dashMonthlyExp.textContent = formatMoneyMasked(expTotal);
+  if (dashExpCount) dashExpCount.textContent = `${expTxs.length} transaksi`;
 
   // Budget remaining calculation
   const totalBudgetLimit = state.budgets.reduce((sum, b) => sum + Number(b.limit), 0);
   const remainingBudget = Math.max(0, totalBudgetLimit - expTotal);
-  document.getElementById('dashBudgetRemaining').textContent = formatMoneyMasked(remainingBudget);
+  const dashBudgetRem = el('dashBudgetRemaining');
+  if (dashBudgetRem) dashBudgetRem.textContent = formatMoneyMasked(remainingBudget);
 
   const budgetPct = totalBudgetLimit > 0 ? Math.min(100, Math.round((expTotal / totalBudgetLimit) * 100)) : 0;
-  document.getElementById('dashBudgetProgressFill').style.width = `${budgetPct}%`;
-  document.getElementById('dashBudgetPercentText').textContent = `${budgetPct}% terpakai`;
+  const dashBudgetFill = el('dashBudgetProgressFill');
+  const dashBudgetPct = el('dashBudgetPercentText');
+  if (dashBudgetFill) dashBudgetFill.style.width = `${budgetPct}%`;
+  if (dashBudgetPct) dashBudgetPct.textContent = `${budgetPct}% terpakai`;
 
   // Recent transactions - show 3, with "show more"
   const allRecent = state.transactions.slice(0, 10);
-  const container = document.getElementById('recentTransactionsList');
-  const showMoreBtn = document.getElementById('showMoreRecentTxBtn');
+  const container = el('recentTransactionsList');
+  const showMoreBtn = el('showMoreRecentTxBtn');
+  if (!container || !showMoreBtn) {
+    renderDashboardAccounts();
+    renderDonutChart();
+    renderCashflowBarChart();
+    return;
+  }
   
   const renderRecentItems = (items) => {
     return items.map(t => {
@@ -394,6 +410,7 @@ function renderDashboard() {
 
 function renderDashboardAccounts() {
   const list = document.getElementById('dashAccountsList');
+  if (!list) return;
   if (state.accounts.length === 0) {
     list.innerHTML = '<p class="text-center text-dim" style="padding: 16px 0;">Belum ada dompet. Tambahkan dompet baru.</p>';
     return;
@@ -429,19 +446,27 @@ function renderDashboardAccounts() {
 
 // Render Transactions Table with Filters
 function renderTransactionsTable() {
-  const typeFilter = document.getElementById('txTypeFilter').value;
-  const catFilter = document.getElementById('txCategoryFilter').value;
-  const accFilter = document.getElementById('txAccountFilter').value;
-  const search = document.getElementById('txSearchInput').value.toLowerCase();
-  
-  const monthFilter = document.getElementById('txMonthFilter').value;
+  const typeFilterEl = document.getElementById('txTypeFilter');
+  const catFilterEl = document.getElementById('txCategoryFilter');
+  const accFilterEl = document.getElementById('txAccountFilter');
+  const searchEl = document.getElementById('txSearchInput');
+  const monthFilterEl = document.getElementById('txMonthFilter');
+
+  const typeFilter = typeFilterEl ? typeFilterEl.value : 'ALL';
+  const catFilter = catFilterEl ? catFilterEl.value : 'ALL';
+  const accFilter = accFilterEl ? accFilterEl.value : 'ALL';
+  const search = searchEl ? searchEl.value.toLowerCase() : '';
+  const monthFilter = monthFilterEl ? monthFilterEl.value : '';
 
   const filtered = state.transactions.filter(t => {
     if (typeFilter !== 'ALL' && t.type !== typeFilter) return false;
     if (catFilter !== 'ALL' && t.category !== catFilter) return false;
     if (accFilter !== 'ALL' && t.account !== accFilter) return false;
     if (search && !(t.note || '').toLowerCase().includes(search)) return false;
-    
+    if (monthFilter) {
+      const txMonth = t.date.substring(0, 7);
+      if (txMonth !== monthFilter) return false;
+    }
     return true;
   });
 
@@ -545,7 +570,8 @@ function renderBudgetsAndGoals() {
   });
 
   const grid = document.getElementById('budgetsGrid');
-  grid.innerHTML = state.budgets.map(b => {
+  if (grid) {
+    grid.innerHTML = state.budgets.map(b => {
     const cat = state.getCategoryObj(b.categoryId);
     const spent = monthlyExpTxs.filter(t => t.category === b.categoryId).reduce((sum, t) => sum + Number(t.amount), 0);
     const pct = Math.min(100, Math.round((spent / b.limit) * 100));
@@ -590,10 +616,12 @@ function renderBudgetsAndGoals() {
       </div>
     `;
   }).join('');
+  }
 
   // Goals
   const goalsGrid = document.getElementById('goalsGrid');
-  goalsGrid.innerHTML = state.goals.map(g => {
+  if (goalsGrid) {
+    goalsGrid.innerHTML = state.goals.map(g => {
     const pct = Math.min(100, Math.round((g.current / g.target) * 100));
     return `
       <div class="goal-card" style="position: relative;">
@@ -636,6 +664,7 @@ function renderBudgetsAndGoals() {
       </div>
     `;
   }).join('');
+  }
 }
 
 // Global Savings Goals Management Functions
@@ -709,6 +738,7 @@ window._deleteGoal = function(goalId) {
 // Render Accounts
 function renderAccounts() {
   const grid = document.getElementById('accountsGrid');
+  if (!grid) return;
   grid.innerHTML = state.accounts.map(a => `
     <div class="account-card">
       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -1166,7 +1196,7 @@ function renderDonutChart() {
 
   if (grandTotal === 0) {
     container.innerHTML = `<svg viewBox="0 0 200 200"><text x="100" y="100" text-anchor="middle" fill="var(--text-muted)" font-size="12" font-family="Plus Jakarta Sans">Belum ada data</text></svg>`;
-    legendBox.innerHTML = `<span style="font-size: 12px; color: var(--text-dim);">Belum ada pengeluaran di periode ini</span>`;
+    if (legendBox) legendBox.innerHTML = `<span style="font-size: 12px; color: var(--text-dim);">Belum ada pengeluaran di periode ini</span>`;
     return;
   }
 
@@ -1222,7 +1252,7 @@ function renderDonutChart() {
     });
 
   container.innerHTML = `<svg viewBox="0 0 200 200" class="svg-chart">${segments}</svg>`;
-  legendBox.innerHTML = legendItems.join('');
+  if (legendBox) legendBox.innerHTML = legendItems.join('');
 }
 
 function renderCashflowBarChart() {
@@ -1571,10 +1601,28 @@ function setupEventListeners() {
     const savedTx = state.addTransaction(tx);
     txModal.classList.remove('active');
 
-    renderDashboard();
-    renderTransactionsTable();
-    renderAccounts();
-    renderBudgetsAndGoals();
+    try {
+      renderDashboard();
+    } catch (err) {
+      console.error('renderDashboard error:', err);
+    }
+    try {
+      renderTransactionsTable();
+    } catch (err) {
+      console.error('renderTransactionsTable error:', err);
+    }
+    try {
+      renderAccounts();
+    } catch (err) {
+      console.error('renderAccounts error:', err);
+    }
+    try {
+      renderBudgetsAndGoals();
+    } catch (err) {
+      console.error('renderBudgetsAndGoals error:', err);
+    }
+
+    populateFormDropdowns();
 
     showToast('Transaksi berhasil disimpan', 'success');
 
