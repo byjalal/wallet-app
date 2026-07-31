@@ -2113,6 +2113,7 @@ function updateAuthUI() {
 
   if (state.isLoggedIn) {
     document.body.classList.remove('guest-mode');
+    document.querySelectorAll('.owner-only').forEach(el => el.style.setProperty('display', 'block', 'important'));
     if (guestModeBanner) guestModeBanner.style.display = 'none';
 
     if (headerStatus) {
@@ -2139,6 +2140,7 @@ function updateAuthUI() {
     if (logoutBtn) logoutBtn.style.display = 'inline-flex';
   } else {
     document.body.classList.add('guest-mode');
+    document.querySelectorAll('.owner-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
     if (guestModeBanner) guestModeBanner.style.display = 'flex';
 
     if (headerStatus) {
