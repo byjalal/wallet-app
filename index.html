@@ -324,6 +324,31 @@
           </div>
         </div>
 
+        <!-- FIREBASE REALTIME CLOUD DATABASE -->
+        <div class="section-card glass-card mt-4">
+          <div class="card-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <h3><i class="fa-solid fa-fire text-rose"></i> Firebase Cloud Database (Realtime Sync 24/7)</h3>
+            <span id="firebaseStatusBadge" class="badge badge-warning">Nonaktif</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
+            Hubungkan dengan Google Firebase agar data keuangan tersimpan aman di cloud dan tersinkronisasi otomatis secara realtime di semua HP/Laptop Anda.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block;">Firebase Config / Database URL</label>
+            <textarea id="firebaseConfigInput" placeholder='Tempelkan Firebase Config / Database URL di sini (Contoh: https://nama-app-default-rtdb.firebaseio.com)' rows="3" style="width: 100%; padding: 10px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 12px; font-family: monospace;"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" id="saveFirebaseBtn" onclick="window._saveFirebaseConfig()">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Simpan & Hubungkan Firebase
+            </button>
+            <button class="btn btn-secondary" id="disconnectFirebaseBtn" onclick="window._disconnectFirebase()" style="display: none;">
+              <i class="fa-solid fa-plug-circle-xmark"></i> Putuskan Firebase
+            </button>
+          </div>
+        </div>
+
         <!-- TEMA -->
         <div class="section-card glass-card mt-4">
           <div class="card-header" style="margin-bottom: 16px;">
@@ -903,6 +928,10 @@
   <!-- Notification Toast Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <script src="app.js?v=20260731_authguest"></script>
+  <!-- Firebase App & Realtime Database SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script src="app.js?v=20260731_firebase"></script>
 </body>
 </html>

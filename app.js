@@ -98,6 +98,10 @@ class WalletState {
     localStorage.setItem('wallet_hide_nominal', this.hideNominal);
     localStorage.setItem('wallet_username', this.username);
     localStorage.setItem('wallet_passcode', this.passcode);
+
+    if (window._syncStateToFirebase) {
+      window._syncStateToFirebase();
+    }
   }
 
   addTransaction(tx) {
@@ -247,6 +251,7 @@ function initUI() {
   renderAccounts();
   populateFormDropdowns();
   setupEventListeners();
+  window._initFirebaseSync();
 
   if (!state.isLoggedIn) {
     window._openAuthModal();
@@ -2162,6 +2167,116 @@ function updateAuthUI() {
     if (logoutBtn) logoutBtn.style.display = 'none';
   }
 }
+
+// Firebase Realtime Cloud Sync Logic
+let _firebaseDb = null;
+let _isFirebaseRemoteUpdate = false;
+
+window._initFirebaseSync = function() {
+  const configRaw = localStorage.getItem('wallet_firebase_config');
+  const badge = document.getElementById('firebaseStatusBadge');
+  const input = document.getElementById('firebaseConfigInput');
+  const disconnectBtn = document.getElementById('disconnectFirebaseBtn');
+
+  if (input && configRaw) input.value = configRaw;
+
+  if (!configRaw || typeof firebase === 'undefined') {
+    if (badge) {
+      badge.textContent = 'Nonaktif';
+      badge.className = 'badge badge-warning';
+    }
+    if (disconnectBtn) disconnectBtn.style.display = 'none';
+    return;
+  }
+
+  try {
+    let configObj;
+    if (configRaw.trim().startsWith('{')) {
+      configObj = JSON.parse(configRaw);
+    } else if (configRaw.trim().startsWith('http')) {
+      configObj = { databaseURL: configRaw.trim() };
+    } else {
+      throw new Error('Format Firebase Config tidak valid');
+    }
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(configObj);
+    }
+    _firebaseDb = firebase.database();
+
+    if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
+
+    if (badge) {
+      badge.textContent = 'Connected (Realtime)';
+      badge.className = 'badge badge-success';
+    }
+
+    // Listen to realtime changes from Firebase Cloud
+    _firebaseDb.ref('wallet_data').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        _isFirebaseRemoteUpdate = true;
+        if (data.accounts) state.accounts = data.accounts;
+        if (data.transactions) state.transactions = data.transactions;
+        if (data.budgets) state.budgets = data.budgets;
+        if (data.goals) state.goals = data.goals;
+        if (data.categories) state.categories = data.categories;
+
+        state.save();
+        _isFirebaseRemoteUpdate = false;
+
+        renderDashboard();
+        renderAccounts();
+        renderBudgetsAndGoals();
+        renderTransactionsTable();
+      }
+    });
+  } catch (err) {
+    console.error('Firebase init error:', err);
+    if (badge) {
+      badge.textContent = 'Error Connection';
+      badge.className = 'badge badge-danger';
+    }
+  }
+};
+
+window._syncStateToFirebase = function() {
+  if (_isFirebaseRemoteUpdate || !_firebaseDb || !state.isLoggedIn) return;
+  try {
+    _firebaseDb.ref('wallet_data').set({
+      accounts: state.accounts,
+      transactions: state.transactions,
+      budgets: state.budgets,
+      goals: state.goals,
+      categories: state.categories,
+      updatedAt: Date.now()
+    });
+  } catch (e) {
+    console.error('Firebase sync error:', e);
+  }
+};
+
+window._saveFirebaseConfig = function() {
+  const input = document.getElementById('firebaseConfigInput');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) {
+    alert('Masukkan Firebase Config JSON atau Database URL terlebih dahulu.');
+    return;
+  }
+  localStorage.setItem('wallet_firebase_config', val);
+  alert('Firebase Config berhasil disimpan. Menghubungkan ke Realtime Cloud Database...');
+  window._initFirebaseSync();
+};
+
+window._disconnectFirebase = function() {
+  if (confirm('Apakah Anda yakin ingin memutuskan koneksi Firebase?')) {
+    localStorage.removeItem('wallet_firebase_config');
+    _firebaseDb = null;
+    alert('Koneksi Firebase diputuskan.');
+    window._initFirebaseSync();
+  }
+};
 
 // Prevent double-tap zoom for native iOS App feel
 let _lastTouchEnd = 0;
