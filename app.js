@@ -83,7 +83,7 @@ class WalletState {
     this.isRegistered = !!(this.username && this.passcode);
     this.isLoggedIn = sessionStorage.getItem('wallet_session_active') === 'true';
     this.isGuestMode = !this.isLoggedIn;
-    this._lastUpdate = parseInt(localStorage.getItem('wallet_last_update')) || Date.now();
+    this._lastUpdate = parseInt(localStorage.getItem('wallet_last_update')) || 0;
   }
 
   save() {
