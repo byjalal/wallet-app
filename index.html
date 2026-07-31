@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Wallet — Budget & Money Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260731_authguest">
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-wallet"></i>
+        </div>
+        <div class="brand-text">
+          <h2>Wallet</h2>
+          <span>Money Manager</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-btn active" data-tab="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-btn" data-tab="transactions">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Transaksi</span>
+        </button>
+
+        <button class="nav-btn add-mobile-btn" id="mobileAddBtn" title="Tambah Transaksi">
+          <div class="add-icon-circle"><i class="fa-solid fa-plus"></i></div>
+          <span>Tambah</span>
+        </button>
+
+        <button class="nav-btn" data-tab="budgets">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display: inline-block; vertical-align: middle; margin-bottom: 2px;">
+            <rect x="2" y="13" width="5" height="9" rx="1.2" />
+            <rect x="9.5" y="2" width="5" height="20" rx="1.2" />
+            <rect x="17" y="7" width="5" height="15" rx="1.2" />
+          </svg>
+          <span>Anggaran</span>
+        </button>
+        <button class="nav-btn" data-tab="profile">
+          <i class="fa-solid fa-user"></i>
+          <span>Profile</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="top-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+        <div class="header-title" style="flex: 1; min-width: 0;">
+          <h1 id="pageTitle" style="margin: 0;">Overview Dashboard</h1>
+          <p id="pageSubtitle" style="margin-top: 4px;">Ringkasan keuangan dan analisis pengeluaran Anda</p>
+        </div>
+        <div class="header-user-status" id="headerUserStatus" style="flex-shrink: 0;">
+          <!-- Dynamic user badge / login button -->
+        </div>
+      </header>
+
+      <!-- TAB 1: DASHBOARD -->
+      <section class="tab-content active" id="tab-dashboard">
+        <!-- Guest Mode Read-Only Banner -->
+        <div id="guestModeBanner" class="read-only-banner" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 16px; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--amber);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-eye" style="font-size: 16px;"></i>
+            <span><strong>Mode Tamu (Read-Only)</strong> — Pengunjung hanya dapat melihat data. Login sebagai Pemilik untuk mengedit.</span>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="window._openAuthModal()" style="white-space: nowrap;">Login Pemilik</button>
+        </div>
+
+        <!-- Stat Cards Carousel -->
+        <div class="stats-carousel-wrapper">
+          <div class="stats-carousel" id="statsCarousel">
+            <div class="stat-card glass-card balance">
+              <div class="stat-header">
+                <span>Total Saldo Bersih</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button class="icon-btn-sm toggle-hide-nominal" onclick="window.toggleHideNominalState()" title="Intip / Sembunyikan Nominal (5s)" style="width: 34px; height: 34px; font-size: 14px; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: var(--primary); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-eye-slash hide-nominal-icon"></i>
+                  </button>
+                  <div class="stat-icon-wrapper"><i class="fa-solid fa-vault"></i></div>
+                </div>
+              </div>
+              <div class="stat-value money-value" id="dashTotalBalance">Rp 0</div>
+              <div class="stat-footer positive">
+                <i class="fa-solid fa-shield-halved"></i> Terhitung dari dompet aktif
+              </div>
+            </div>
+
+            <div class="stat-card glass-card income">
+              <div class="stat-header">
+                <span>Pemasukan Bulan Ini</span>
+                <div class="stat-icon-wrapper"><i class="fa-solid fa-arrow-down-left"></i></div>
+              </div>
+              <div class="stat-value text-emerald money-value" id="dashMonthlyIncome">Rp 0</div>
+              <div class="stat-footer">
+                <span id="dashIncomeCount">0 transaksi</span>
+              </div>
+            </div>
+
+            <div class="stat-card glass-card expense">
+              <div class="stat-header">
+                <span>Pengeluaran Bulan Ini</span>
+                <div class="stat-icon-wrapper"><i class="fa-solid fa-arrow-up-right"></i></div>
+              </div>
+              <div class="stat-value text-rose money-value" id="dashMonthlyExpense">Rp 0</div>
+              <div class="stat-footer">
+                <span id="dashExpenseCount">0 transaksi</span>
+              </div>
+            </div>
+
+            <div class="stat-card glass-card budget">
+              <div class="stat-header">
+                <span>Sisa Anggaran Bulanan</span>
+                <div class="stat-icon-wrapper"><i class="fa-solid fa-scale-balanced"></i></div>
+              </div>
+              <div class="stat-value money-value" id="dashBudgetRemaining">Rp 0</div>
+              <div class="stat-footer">
+                <div class="mini-progress-bar">
+                  <div class="mini-progress-fill" id="dashBudgetProgressFill" style="width: 0%"></div>
+                </div>
+                <span id="dashBudgetPercentText">0% terpakai</span>
+              </div>
+            </div>
+          </div>
+          <div class="carousel-dots" id="carouselDots">
+            <span class="dot active" data-index="0"></span>
+            <span class="dot" data-index="1"></span>
+            <span class="dot" data-index="2"></span>
+            <span class="dot" data-index="3"></span>
+          </div>
+        </div>
+
+        <!-- Dompet / Rekening -->
+        <div class="section-card glass-card mt-6">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-wallet"></i> Dompet / Rekening</h3>
+            <button class="btn btn-sm btn-secondary" id="dashAddAccountBtn">
+              <i class="fa-solid fa-plus"></i> Tambah
+            </button>
+          </div>
+          <div class="accounts-scroll mt-4" id="dashAccountsList">
+            <!-- Dynamic account cards -->
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid mt-6">
+          <div class="chart-card glass-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-chart-line text-cyan"></i> Alur Kas</h3>
+              <select class="period-select" id="cashflowPeriodSelect" onchange="window.setCashflowPeriod(Number(this.value))">
+                <option value="3">3 Bulan</option>
+                <option value="6" selected>6 Bulan</option>
+                <option value="12">1 Tahun</option>
+              </select>
+            </div>
+            <div class="chart-body" style="position: relative;">
+              <div id="cashflowChartContainer" style="width: 100%; height: 220px; position: relative;"></div>
+              <div id="chartTooltip" style="display:none; position:absolute; pointer-events:none; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 12px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 10; white-space: nowrap;">
+                <div id="tooltipDate" style="font-weight: 600; margin-bottom: 4px;"></div>
+                <div id="tooltipIncome" style="color: #10b981;"></div>
+                <div id="tooltipExpense" style="color: #f43f5e;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card glass-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-chart-pie text-violet"></i> Pengeluaran</h3>
+              <select class="period-select" id="categoryPeriodSelect" onchange="window.setCategoryPeriod(Number(this.value))">
+                <option value="3">3 Bulan</option>
+                <option value="6" selected>6 Bulan</option>
+                <option value="12">1 Tahun</option>
+              </select>
+            </div>
+            <div class="chart-body donut-wrapper">
+              <div id="donutChartContainer" style="width: 200px; height: 200px; margin: 0 auto;"></div>
+              <div class="chart-legend" id="categoriesLegend"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions Preview -->
+        <div class="section-card glass-card mt-6">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Transaksi Terakhir</h3>
+            <button class="btn btn-sm btn-ghost" onclick="switchTab('transactions')">Lihat Semua <i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <div id="recentTransactionsList" class="mt-4">
+            <!-- Dynamic rows -->
+          </div>
+          <button class="btn btn-ghost btn-full mt-4" id="showMoreRecentTxBtn" style="display: none;" onclick="window._showAllRecentTx()">
+            <i class="fa-solid fa-chevron-down"></i> Tampilkan Lebih Banyak
+          </button>
+        </div>
+      </section>
+
+      <!-- TAB 2: TRANSACTIONS -->
+      <section class="tab-content" id="tab-transactions">
+        <div class="filter-bar glass-card">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="txSearchInput" placeholder="Cari transaksi atau catatan...">
+          </div>
+
+          <div class="filter-group">
+            <select id="txTypeFilter">
+              <option value="ALL">Semua Tipe</option>
+              <option value="EXPENSE">Pengeluaran</option>
+              <option value="INCOME">Pemasukan</option>
+              <option value="TRANSFER">Transfer</option>
+            </select>
+
+            <select id="txCategoryFilter">
+              <option value="ALL">Semua Kategori</option>
+            </select>
+
+            <select id="txAccountFilter">
+              <option value="ALL">Semua Dompet</option>
+            </select>
+
+            <button class="btn btn-secondary btn-icon" id="resetFilterBtn" title="Reset Filter">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+
+          <!-- Date Filters -->
+          <div class="filter-group" style="margin-top: 10px; width: 100%; border-top: 1px solid var(--glass-border); padding-top: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+              <span class="text-muted" style="font-size: 12px; font-weight: 600;">Periode:</span>
+              <input type="month" id="txMonthFilter" title="Pilih Bulan" style="background: var(--bg-card); border: 1px solid var(--glass-border); padding: 6px 10px; border-radius: var(--radius-md); color: var(--text-main); font-size: 13px; outline: none; box-shadow: var(--shadow-sm); max-width: 140px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card glass-card mt-4" style="padding: 14px 16px;">
+          <div id="allTransactionsTable" style="display: flex; flex-direction: column; width: 100%;">
+            <!-- Dynamic transaction rows -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: BUDGETS & GOALS -->
+      <section class="tab-content" id="tab-budgets">
+        <div class="budgets-header-actions">
+          <h2>Anggaran Bulanan</h2>
+          <button class="icon-btn-sm" id="openAddBudgetBtn" title="Tambah Anggaran" style="width: 36px; height: 36px; font-size: 16px; background: var(--primary); color: #fff; border-radius: 50%; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+
+        <div class="budgets-grid" id="budgetsGrid">
+          <!-- Dynamic Budget Cards -->
+        </div>
+
+        <div class="section-header mt-8" style="display: flex; align-items: center; justify-content: space-between;">
+          <h2>Target Tabungan</h2>
+          <button class="icon-btn-sm" id="openAddGoalBtn" title="Tambah Target" style="width: 36px; height: 36px; font-size: 16px; background: var(--primary); color: #fff; border-radius: 50%; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+
+        <div class="goals-grid mt-4" id="goalsGrid">
+          <!-- Dynamic Goals Cards -->
+        </div>
+      </section>
+
+      <!-- TAB 4: ACCOUNTS -->
+      <section class="tab-content" id="tab-accounts">
+        <div class="budgets-header-actions">
+          <h2>Daftar Dompet & Rekening</h2>
+          <button class="btn btn-secondary" id="openAddAccountBtn">
+            <i class="fa-solid fa-plus"></i> Tambah Dompet Baru
+          </button>
+        </div>
+
+        <div class="accounts-grid" id="accountsGrid">
+          <!-- Dynamic Account Cards -->
+        </div>
+      </section>
+
+      <!-- TAB 5: PROFILE & PENGATURAN -->
+      <section class="tab-content" id="tab-profile">
+        <div class="top-header">
+          <div class="header-title">
+            <h1>Profile & Pengaturan</h1>
+            <p>Atur preferensi aplikasi dan integrasi data</p>
+          </div>
+        </div>
+
+        <!-- AKUN PEMILIK & PIN SECURITY -->
+        <div class="section-card glass-card mt-4">
+          <div class="card-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <h3><i class="fa-solid fa-user-shield text-emerald"></i> Akses & Keamanan Pemilik</h3>
+            <span id="profileAuthBadge" class="badge"></span>
+          </div>
+          <div id="profileAuthInfo" style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
+            <!-- Dynamic info -->
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="profileRegisterLoginBtn" onclick="window._openAuthModal()">
+              <i class="fa-solid fa-key"></i> <span id="profileAuthBtnText">Atur / Login Pemilik</span>
+            </button>
+            <button class="btn btn-secondary" id="profileLogoutBtn" onclick="window._logoutOwner()" style="display: none;">
+              <i class="fa-solid fa-right-from-bracket"></i> Logout Pemilik
+            </button>
+          </div>
+        </div>
+
+        <!-- TEMA -->
+        <div class="section-card glass-card mt-4">
+          <div class="card-header" style="margin-bottom: 16px;">
+            <h3><i class="fa-solid fa-palette text-amber"></i> Tampilan Tema</h3>
+          </div>
+          <div class="theme-settings" style="display: flex; gap: 12px;">
+            <button class="btn btn-secondary" id="profileThemeBtnDark" data-theme="dark">
+              <i class="fa-solid fa-moon"></i> Dark Mode
+            </button>
+            <button class="btn btn-secondary" id="profileThemeBtnLight" data-theme="light">
+              <i class="fa-solid fa-sun text-amber"></i> Light Mode
+            </button>
+          </div>
+        </div>
+
+        <!-- MATA UANG -->
+        <div class="section-card glass-card mt-4">
+          <div class="card-header" style="margin-bottom: 16px;">
+            <h3><i class="fa-solid fa-globe text-cyan"></i> Mata Uang</h3>
+          </div>
+          <div class="currency-selector" style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-globe" style="font-size: 16px; color: var(--text-muted);"></i>
+            <select id="currencySelect" style="flex: 1; background: var(--bg-card); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: var(--radius-md); color: var(--text-main); font-size: 14px;">
+              <option value="IDR">IDR - Rupiah (Rp)</option>
+              <option value="USD">USD - Dollar ($)</option>
+              <option value="EUR">EUR - Euro (€)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- KELOLA KATEGORI -->
+        <div class="section-card glass-card mt-4">
+          <div class="card-header" style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+            <h3><i class="fa-solid fa-tags text-violet"></i> Kelola Kategori Transaksi</h3>
+            <button class="btn btn-sm btn-primary" id="openAddCategoryBtn">
+              <i class="fa-solid fa-plus"></i> Tambah
+            </button>
+          </div>
+          <div class="category-type-switcher" style="display: flex; gap: 8px; margin-bottom: 14px;">
+            <button class="period-btn active" id="catTypeExpBtn" onclick="window._switchCategoryTab('EXPENSE')">Pengeluaran</button>
+            <button class="period-btn" id="catTypeIncBtn" onclick="window._switchCategoryTab('INCOME')">Pemasukan</button>
+          </div>
+          <div id="categoryManagerList" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Dynamic category list -->
+          </div>
+        </div>
+
+        <!-- SYNC STATUS -->
+        <div class="section-card glass-card mt-4">
+          <div class="card-header" style="margin-bottom: 16px;">
+            <h3><i class="fa-solid fa-cloud text-cyan"></i> Status Sinkronisasi</h3>
+          </div>
+          <div class="sync-status-card" id="syncStatusWidget" style="margin: 0;">
+            <div class="status-indicator offline"></div>
+            <div class="status-info">
+              <span class="status-title">Google Sheets</span>
+              <span class="status-sub" id="syncStatusText">Local Only</span>
+            </div>
+            <button class="icon-btn-sm" id="quickSyncBtn" title="Sync ke Google Sheets">
+              <i class="fa-solid fa-rotate"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="spreadsheet-banner glass-card mt-6">
+          <div class="banner-content">
+            <div class="banner-badge"><i class="fa-solid fa-file-excel"></i> Integrasi Data Eksternal</div>
+            <h2>Pusat Sinkronisasi Spreadsheet</h2>
+            <p>Kelola data keuangan Anda dengan kebebasan penuh. Ekspor ke Excel, impor transaksi lama, atau hubungkan ke Google Sheets.</p>
+          </div>
+          <div class="banner-illustration">
+            <i class="fa-solid fa-table-cells-large"></i>
+          </div>
+        </div>
+
+        <div class="spreadsheet-options-grid mt-6">
+          <!-- Card 1: Export -->
+          <div class="hub-card glass-card">
+            <div class="hub-icon text-cyan"><i class="fa-solid fa-file-export"></i></div>
+            <h3>Ekspor ke Excel / CSV</h3>
+            <p>Unduh seluruh data transaksi, dompet, dan alokasi anggaran Anda ke dalam spreadsheet berformat rapi.</p>
+            <div class="hub-actions">
+              <button class="btn btn-primary btn-full" id="exportCsvBtn">
+                <i class="fa-solid fa-download"></i> Unduh File CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 2: Import -->
+          <div class="hub-card glass-card">
+            <div class="hub-icon text-violet"><i class="fa-solid fa-file-import"></i></div>
+            <h3>Impor dari Spreadsheet</h3>
+            <p>Unggah file `.csv` transaksi lama Anda. Sistem akan memetakan data secara otomatis.</p>
+            <div class="hub-actions">
+              <button class="btn btn-secondary btn-full" id="openImportModalBtn">
+                <i class="fa-solid fa-upload"></i> Unggah File Spreadsheet
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 3: Google Sheets Webhook -->
+          <div class="hub-card glass-card highlight-border">
+            <div class="hub-icon text-emerald"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+            <h3>Google Sheets Real-time Sync</h3>
+            <p>Hubungkan aplikasi ini ke Google Sheet Anda via Webhook Apps Script sederhana. Transaksi otomatis tersimpan di Google Drive.</p>
+            <div class="hub-actions">
+              <button class="btn btn-emerald btn-full" id="openWebhookConfigBtn">
+                <i class="fa-solid fa-plug"></i> Pengaturan Google Sheets Sync
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Google Sheets Apps Script Setup Guide -->
+        <div class="section-card glass-card mt-6">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-code text-cyan"></i> Panduan Singkat Setup Google Sheets Apps Script</h3>
+          </div>
+          <div class="script-guide-body">
+            <ol class="setup-steps">
+              <li>Buat <strong>Google Sheets</strong> baru di Google Drive Anda (beri nama misal: <em>"Wallet App Database"</em>).</li>
+              <li>Buka menu <strong>Extensions > Apps Script</strong>.</li>
+              <li>Hapus semua kode yang ada, lalu salin dan tempel kode berikut:</li>
+            </ol>
+
+            <div class="code-box">
+              <button class="btn-copy" id="copyAppsScriptBtn"><i class="fa-solid fa-copy"></i> Salin Kode</button>
+              <pre><code id="appsScriptCodeText">function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    // Buat header jika sheet masih kosong
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["ID", "Tanggal", "Tipe", "Kategori", "Jumlah", "Dompet", "Catatan", "Waktu Sync"]);
+      sheet.getRange(1, 1, 1, 8).setFontWeight("bold").setBackground("#1e293b").setFontColor("#ffffff");
+    }
+    
+    // Tambah baris transaksi baru
+    sheet.appendRow([
+      data.id || "",
+      data.date || "",
+      data.type || "",
+      data.category || "",
+      data.amount || 0,
+      data.account || "",
+      data.note || "",
+      new Date().toISOString()
+    ]);
+    
+    return ContentService.createTextOutput(JSON.stringify({result: "success"}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(error) {
+    return ContentService.createTextOutput(JSON.stringify({result: "error", message: error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</code></pre>
+            </div>
+
+            <ol class="setup-steps mt-4" start="4">
+              <li>Klik <strong>Deploy > New deployment</strong>. Pilih type <strong>Web App</strong>.</li>
+              <li>Atur <em>Execute as: Me</em> dan <em>Who has access: Anyone</em>. Klik <strong>Deploy</strong>.</li>
+              <li>Salin <strong>Web App URL</strong> yang dihasilkan, lalu tempelkan di menu Pengaturan Google Sheets Sync!</li>
+            </ol>
+        <!-- RESET DATA / MULAI DARI AWAL -->
+        <div class="section-card glass-card mt-6" style="border-color: rgba(244, 63, 94, 0.3);">
+          <div class="card-header" style="margin-bottom: 12px;">
+            <h3 class="text-rose"><i class="fa-solid fa-triangle-exclamation"></i> Reset Data / Mulai dari Awal</h3>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            Ingin mencatat keuangan dari awal lagi? Anda dapat mengosongkan riwayat transaksi atau menghapus seluruh data dompet & transaksi secara permanen.
+          </p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn btn-secondary" id="resetTransactionsOnlyBtn" style="border-color: rgba(244, 63, 94, 0.4); color: var(--rose);">
+              <i class="fa-solid fa-broom"></i> Reset Transaksi & Saldo 0
+            </button>
+            <button class="btn btn-primary" id="resetAllDataBtn" style="background: #ef4444; border-color: #ef4444;">
+              <i class="fa-solid fa-trash-arrow-up"></i> Reset Total (Mulai dari Nol)
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: Tambah/Edit Transaksi -->
+  <div class="modal-overlay" id="txModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3 id="txModalTitle">Tambah Transaksi Baru</h3>
+        <button class="close-btn" id="closeTxModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="txForm">
+        <input type="hidden" id="txId">
+
+        <div class="form-group">
+          <label>Tipe Transaksi</label>
+          <div class="type-selector">
+            <button type="button" class="type-btn active expense" data-type="EXPENSE">
+              <i class="fa-solid fa-arrow-up-right"></i> Pengeluaran
+            </button>
+            <button type="button" class="type-btn income" data-type="INCOME">
+              <i class="fa-solid fa-arrow-down-left"></i> Pemasukan
+            </button>
+            <button type="button" class="type-btn transfer" data-type="TRANSFER">
+              <i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="txAmount">Jumlah Saldo</label>
+            <div class="input-prefix-wrapper">
+              <span class="input-prefix" id="formCurrencyPrefix">Rp</span>
+              <input type="text" inputmode="numeric" id="txAmount" required placeholder="0">
+            </div>
+            <div class="amount-helper-text" id="txAmountHelper" style="font-size: 11px; font-weight: 600; color: var(--primary); margin-top: 4px; display: none;"></div>
+          </div>
+          <div class="form-group">
+            <label for="txDate">Tanggal</label>
+            <input type="date" id="txDate" required>
+          </div>
+        </div>
+
+        <div class="form-row" id="categoryAndAccountRow">
+          <div class="form-group" id="categoryFormGroup">
+            <label for="txCategory">Kategori</label>
+            <select id="txCategory" required></select>
+          </div>
+          <div class="form-group">
+            <label for="txAccount">Dompet / Rekening</label>
+            <select id="txAccount" required></select>
+          </div>
+        </div>
+
+        <!-- Transfer destination account (shown only when type is TRANSFER) -->
+        <div class="form-group hidden" id="transferTargetGroup">
+          <label for="txTargetAccount">Dompet Tujuan Transfer</label>
+          <select id="txTargetAccount"></select>
+        </div>
+
+        <div class="form-group">
+          <label for="txNote">Catatan / Keterangan</label>
+          <input type="text" id="txNote" placeholder="Misal: Makan Siang Nasi Padang">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancelTxModalBtn">Batal</button>
+          <button type="submit" class="btn btn-primary" id="saveTxBtn">Simpan Transaksi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Setup Webhook Sync -->
+  <div class="modal-overlay" id="webhookModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-cloud-arrow-up text-emerald"></i> Pengaturan Google Sheets Webhook</h3>
+        <button class="close-btn" id="closeWebhookModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Masukkan Web App URL dari Google Apps Script Anda untuk mengaktifkan sinkronisasi otomatis.</p>
+        <div class="form-group mt-4">
+          <label for="webhookUrlInput">Google Apps Script Web App URL</label>
+          <input type="url" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <div class="toggle-group mt-4">
+          <label class="switch">
+            <input type="checkbox" id="autoSyncToggle">
+            <span class="slider round"></span>
+          </label>
+          <span class="toggle-label">Otomatis sync setiap kali transaksi disimpan</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="testSyncBtn"><i class="fa-solid fa-paper-plane"></i> Test Connection</button>
+        <button class="btn btn-emerald" id="saveWebhookBtn">Simpan Pengaturan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Impor Spreadsheet File -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-import text-violet"></i> Impor Transaksi dari Spreadsheet</h3>
+        <button class="close-btn" id="closeImportModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="drop-zone" id="fileDropZone">
+          <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+          <p>Tarik & Lepaskan file <strong>.CSV</strong> di sini</p>
+          <span>atau klik untuk memilih file dari komputer</span>
+          <input type="file" id="importFileInput" accept=".csv">
+        </div>
+
+        <div class="import-preview-container hidden" id="importPreviewContainer">
+          <h4>Pratinjau Data Impor (<span id="importCountText">0</span> transaksi ditemukan)</h4>
+          <div class="table-responsive max-h-60 mt-2">
+            <table class="custom-table table-sm">
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Kategori</th>
+                  <th>Jumlah</th>
+                  <th>Dompet</th>
+                  <th>Catatan</th>
+                </tr>
+              </thead>
+              <tbody id="importPreviewTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cancelImportBtn">Batal</button>
+        <button class="btn btn-violet hidden" id="confirmImportBtn">Proses Impor Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Tambah Dompet/Rekening -->
+  <div class="modal-overlay" id="accountModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3 id="accountModalTitle">Tambah Dompet Baru</h3>
+        <button class="close-btn" id="closeAccountModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="accountForm">
+        <input type="hidden" id="accId">
+        <div class="form-group">
+          <label for="accName">Nama Dompet / Bank</label>
+          <input type="text" id="accName" required placeholder="Misal: BCA Utama, Gopay, Cash">
+        </div>
+        <div class="form-group">
+          <label>Simbol Ikon Dompet (Pilih 1 dari 14 ikon)</label>
+          <div class="icon-selector-grid" id="accIconGrid" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+            <button type="button" class="icon-option-btn active" data-icon="fa-wallet" title="Dompet"><i class="fa-solid fa-wallet"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-building-columns" title="Bank / Rekening"><i class="fa-solid fa-building-columns"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-mobile-screen" title="E-Wallet"><i class="fa-solid fa-mobile-screen"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-piggy-bank" title="Tabungan"><i class="fa-solid fa-piggy-bank"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-credit-card" title="Kartu Kredit"><i class="fa-solid fa-credit-card"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-coins" title="Koin / Cash"><i class="fa-solid fa-coins"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-money-bill-wave" title="Uang Kertas"><i class="fa-solid fa-money-bill-wave"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-sack-dollar" title="Kantong Uang"><i class="fa-solid fa-sack-dollar"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-chart-line" title="Investasi"><i class="fa-solid fa-chart-line"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-gem" title="Aset Berharga"><i class="fa-solid fa-gem"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-house" title="Properti"><i class="fa-solid fa-house"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-car" title="Kendaraan"><i class="fa-solid fa-car"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-briefcase" title="Bisnis / Usaha"><i class="fa-solid fa-briefcase"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-globe" title="Mata Uang Asing"><i class="fa-solid fa-globe"></i></button>
+          </div>
+          <input type="hidden" id="accIcon" value="fa-wallet">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="accType">Tipe Dompet</label>
+            <select id="accType" required>
+              <option value="BANK">Rekening Bank</option>
+              <option value="CASH">Uang Tunai (Cash)</option>
+              <option value="EWALLET">E-Wallet / Dompet Digital</option>
+              <option value="SAVINGS">Tabungan / Deposito</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="accBalance">Saldo Awal</label>
+            <input type="text" inputmode="numeric" id="accBalance" required placeholder="0">
+            <div class="amount-helper-text" id="accBalanceHelper" style="font-size: 11px; font-weight: 600; color: var(--primary); margin-top: 4px; display: none;"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancelAccountModalBtn">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Dompet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Tambah/Edit Budget -->
+  <div class="modal-overlay" id="budgetModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3>Atur Anggaran Bulanan</h3>
+        <button class="close-btn" id="closeBudgetModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="budgetForm">
+        <div class="form-group">
+          <label for="budgetCategory">Kategori</label>
+          <select id="budgetCategory" required></select>
+        </div>
+        <div class="form-group">
+          <label for="budgetLimit">Batas Anggaran Per Bulan</label>
+          <div class="input-prefix-wrapper">
+            <span class="input-prefix" id="budgetCurrencyPrefix">Rp</span>
+            <input type="number" id="budgetLimit" required placeholder="0" min="0" step="any">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancelBudgetModalBtn">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Anggaran</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Tambah Savings Goal -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3 id="goalModalTitle">Tambah Target Tabungan</h3>
+        <button class="close-btn" id="closeGoalModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="goalForm">
+        <input type="hidden" id="goalId">
+        <div class="form-group">
+          <label for="goalName">Nama Impian / Target</label>
+          <input type="text" id="goalName" required placeholder="Misal: Pergi ke Swiss, Dana Darurat">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="goalTarget">Target Saldo Akhir</label>
+            <input type="text" inputmode="numeric" id="goalTarget" required placeholder="0">
+            <div id="goalTargetHelper" class="text-xs text-emerald font-semibold mt-1" style="display: none;"></div>
+          </div>
+          <div class="form-group">
+            <label for="goalCurrent">Saldo Terkumpul Saat Ini</label>
+            <input type="text" inputmode="numeric" id="goalCurrent" required placeholder="0">
+            <div id="goalCurrentHelper" class="text-xs text-emerald font-semibold mt-1" style="display: none;"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancelGoalModalBtn">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Target</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Setor Uang Tabungan -->
+  <div class="modal-overlay" id="addSavingsModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3 id="addSavingsTitle">Setor Uang Tabungan</h3>
+        <button class="close-btn" id="closeAddSavingsModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="addSavingsForm">
+        <input type="hidden" id="savingsGoalId">
+        
+        <div class="form-group">
+          <label for="savingsAmount">Nominal yang Ditabung (Rp)</label>
+          <input type="text" inputmode="numeric" id="savingsAmount" required placeholder="0">
+          <div id="savingsAmountHelper" class="text-xs text-emerald font-semibold mt-1" style="display: none;"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="savingsSourceAccount">Potong dari Dompet (Opsional)</label>
+          <select id="savingsSourceAccount">
+            <option value="NONE">Tanpa Potong Dompet (Catat Progress Saja)</option>
+            <!-- Accounts populated dynamically -->
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancelAddSavingsModalBtn">Batal</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-piggy-bank"></i> Simpan Tabungan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Tambah/Edit Kategori -->
+  <div class="modal-overlay" id="categoryModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">Tambah Kategori Baru</h3>
+        <button class="close-btn" id="closeCategoryModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="categoryForm">
+        <input type="hidden" id="editCatId">
+        
+        <div class="form-group">
+          <label for="catName">Nama Kategori</label>
+          <input type="text" id="catName" required placeholder="Misal: Kopi & Hangout, Belanja Harian">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="catType">Tipe Kategori</label>
+            <select id="catType" required>
+              <option value="EXPENSE">Pengeluaran</option>
+              <option value="INCOME">Pemasukan</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="catColor">Warna Kategori</label>
+            <input type="color" id="catColor" value="#ef4444" style="height: 42px; width: 100%; border: 1px solid var(--glass-border); border-radius: var(--radius-md); background: var(--bg-card); cursor: pointer; padding: 4px;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Simbol Ikon Kategori</label>
+          <div class="icon-selector-grid" id="catIconGrid" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+            <button type="button" class="icon-option-btn active" data-icon="fa-utensils" title="Makanan/Minuman"><i class="fa-solid fa-utensils"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-car" title="Transportasi"><i class="fa-solid fa-car"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-bolt" title="Tagihan"><i class="fa-solid fa-bolt"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-bag-shopping" title="Belanja"><i class="fa-solid fa-bag-shopping"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-heart-pulse" title="Kesehatan"><i class="fa-solid fa-heart-pulse"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-graduation-cap" title="Pendidikan"><i class="fa-solid fa-graduation-cap"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-money-bill-wave" title="Gaji"><i class="fa-solid fa-money-bill-wave"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-chart-line" title="Investasi"><i class="fa-solid fa-chart-line"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-laptop-code" title="Freelance"><i class="fa-solid fa-laptop-code"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-mug-hot" title="Kopi/Hangout"><i class="fa-solid fa-mug-hot"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-gamepad" title="Hiburan/Game"><i class="fa-solid fa-gamepad"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-basket-shopping" title="Supermarket"><i class="fa-solid fa-basket-shopping"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-plane" title="Travel"><i class="fa-solid fa-plane"></i></button>
+            <button type="button" class="icon-option-btn" data-icon="fa-gift" title="Hadiah"><i class="fa-solid fa-gift"></i></button>
+          </div>
+          <input type="hidden" id="catIcon" value="fa-utensils">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancelCategoryModalBtn">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Kategori</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Login / Register Auth Modal -->
+  <div id="authModal" class="modal-overlay">
+    <div class="glass-modal" style="max-width: 420px; width: 90%;">
+      <div class="modal-header">
+        <h3 id="authModalTitle"><i class="fa-solid fa-user-shield text-primary"></i> Login Pemilik</h3>
+        <button class="close-btn" id="closeAuthModalBtn">&times;</button>
+      </div>
+      <form id="authForm">
+        <div class="modal-body" style="padding-top: 4px;">
+          <p id="authModalDesc" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">
+            Masukkan Username dan Passcode PIN untuk mengedit data aplikasi.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Username Pemilik</label>
+            <input type="text" id="authUsername" placeholder="Contoh: Budi" required style="width: 100%; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 15px;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Passcode / PIN Angka</label>
+            <input type="password" id="authPasscode" placeholder="4 - 6 digit angka" inputmode="numeric" pattern="[0-9]*" maxlength="6" required style="width: 100%; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 15px; letter-spacing: 2px;">
+          </div>
+
+          <div id="authErrorMsg" style="display: none; color: var(--rose); font-size: 12px; margin-bottom: 12px; font-weight: 500;">
+            <i class="fa-solid fa-circle-exclamation"></i> Username atau PIN salah!
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="width: 100%;">
+            <i class="fa-solid fa-right-to-bracket"></i> <span id="authSubmitBtnText">Masuk Pemilik</span>
+          </button>
+
+          <button type="button" class="btn btn-secondary" id="authGuestBtn" onclick="window._enterGuestMode()" style="width: 100%;">
+            <i class="fa-solid fa-eye"></i> Lihat Saja (Mode Tamu / Read-Only)
+          </button>
+
+          <button type="button" id="authToggleModeBtn" onclick="window._toggleAuthFormMode()" style="background: transparent; border: none; color: var(--primary); font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 4px;">
+            Belum punya PIN? Daftar Pemilik Baru
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js?v=20260731_authguest"></script>
+</body>
+</html>
