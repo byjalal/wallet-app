@@ -2595,6 +2595,32 @@ window._checkUsernameAvailable = async function(username) {
 
 const DEFAULT_FIREBASE_CONFIG = 'https://wallet-app-3e58a-default-rtdb.firebaseio.com/';
 
+window.toggleFirebaseCard = function() {
+  const body = document.getElementById('firebaseBody');
+  const chev = document.getElementById('firebaseCardChev');
+  if (!body) return;
+  const willHide = body.style.display !== 'none';
+  body.style.display = willHide ? 'none' : '';
+  if (chev) chev.style.transform = willHide ? 'rotate(-90deg)' : '';
+};
+
+window._toggleFirebaseEdit = function() {
+  const input = document.getElementById('firebaseConfigInput');
+  const saveBtn = document.getElementById('saveFirebaseBtn');
+  const editBtn = document.getElementById('firebaseEditBtn');
+  if (!input) return;
+  const editing = input.readOnly;
+  input.readOnly = !editing;
+  input.style.background = editing ? 'var(--bg-card)' : 'rgba(255,255,255,0.03)';
+  input.style.borderColor = editing ? 'var(--primary)' : 'var(--glass-border)';
+  if (saveBtn) saveBtn.style.display = editing ? 'inline-flex' : 'none';
+  if (editBtn) {
+    editBtn.innerHTML = editing ? '<i class="fa-solid fa-lock"></i>' : '<i class="fa-solid fa-pen-to-square"></i>';
+    editBtn.title = editing ? 'Kunci Config' : 'Edit Config';
+  }
+  if (editing) input.focus();
+};
+
 window._initFirebaseSync = function() {
   window._stopFirebaseListener();
   const configRaw = localStorage.getItem('wallet_firebase_config') || DEFAULT_FIREBASE_CONFIG;
@@ -2658,6 +2684,15 @@ window._saveFirebaseConfig = function() {
   localStorage.setItem('wallet_firebase_config', val);
   alert('Firebase Config berhasil disimpan. Menghubungkan ke Realtime Cloud Database...');
   window._initFirebaseSync();
+  const input = document.getElementById('firebaseConfigInput');
+  const saveBtn = document.getElementById('saveFirebaseBtn');
+  const editBtn = document.getElementById('firebaseEditBtn');
+  if (input) input.readOnly = true;
+  if (saveBtn) saveBtn.style.display = 'none';
+  if (editBtn) {
+    editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+    editBtn.title = 'Edit Config';
+  }
 };
 
 window._disconnectFirebase = function() {
@@ -2665,6 +2700,15 @@ window._disconnectFirebase = function() {
     localStorage.removeItem('wallet_firebase_config');
     window._stopFirebaseListener();
     window._initFirebaseSync();
+    const input = document.getElementById('firebaseConfigInput');
+    const saveBtn = document.getElementById('saveFirebaseBtn');
+    const editBtn = document.getElementById('firebaseEditBtn');
+    if (input) input.readOnly = true;
+    if (saveBtn) saveBtn.style.display = 'none';
+    if (editBtn) {
+      editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+      editBtn.title = 'Edit Config';
+    }
   }
 };
 

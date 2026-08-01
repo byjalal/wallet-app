@@ -377,26 +377,37 @@
 
         <!-- FIREBASE REALTIME CLOUD DATABASE (DESKTOP ONLY & OWNER ONLY) -->
         <div class="section-card glass-card mt-4 owner-only desktop-only" id="firebaseSectionCard">
-          <div class="card-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-            <h3><i class="fa-solid fa-fire text-rose"></i> Firebase Cloud Database (Sync 24/7)</h3>
-            <span id="firebaseStatusBadge" class="badge badge-warning">Nonaktif</span>
+          <div class="card-header" onclick="window.toggleFirebaseCard()" style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-fire text-rose"></i> Firebase Cloud Database (Sync 24/7)
+              <span id="firebaseCardChev" style="transition: transform .2s; font-size: 12px; color: var(--text-muted); flex-shrink: 0;"><i class="fa-solid fa-chevron-down"></i></span>
+            </h3>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="icon-btn-sm" id="firebaseEditBtn" onclick="event.stopPropagation(); window._toggleFirebaseEdit()" title="Edit Config" style="width: 30px; height: 30px; font-size: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--primary); border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <span id="firebaseStatusBadge" class="badge badge-warning">Nonaktif</span>
+            </div>
           </div>
-          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
-            Hubungkan dengan Google Firebase agar data tersimpan aman di cloud dan tersinkronisasi otomatis di semua HP/Laptop Anda.
-          </p>
 
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block;">Firebase Config / Database URL</label>
-            <textarea id="firebaseConfigInput" placeholder='Tempelkan Firebase Config / Database URL di sini (Contoh: https://nama-app-default-rtdb.firebaseio.com)' rows="3" style="width: 100%; padding: 10px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 12px; font-family: monospace;"></textarea>
-          </div>
+          <div id="firebaseBody" style="display: none;">
+            <p style="font-size: 13px; color: var(--text-muted); margin: 12px 0 14px; line-height: 1.4;">
+              Hubungkan dengan Google Firebase agar data tersimpan aman di cloud dan tersinkronisasi otomatis di semua HP/Laptop Anda.
+            </p>
 
-          <div style="display: flex; gap: 10px;">
-            <button class="btn btn-primary" id="saveFirebaseBtn" onclick="window._saveFirebaseConfig()">
-              <i class="fa-solid fa-cloud-arrow-up"></i> Simpan & Hubungkan
-            </button>
-            <button class="btn btn-secondary" id="disconnectFirebaseBtn" onclick="window._disconnectFirebase()" style="display: none;">
-              <i class="fa-solid fa-plug-circle-xmark"></i> Putuskan
-            </button>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block;">Firebase Config / Database URL</label>
+              <textarea id="firebaseConfigInput" readonly placeholder='Tempelkan Firebase Config / Database URL di sini (Contoh: https://nama-app-default-rtdb.firebaseio.com)' rows="3" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 12px; font-family: monospace;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-primary" id="saveFirebaseBtn" onclick="window._saveFirebaseConfig()" style="display: none;">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Simpan & Hubungkan
+              </button>
+              <button class="btn btn-secondary" id="disconnectFirebaseBtn" onclick="window._disconnectFirebase()" style="display: none;">
+                <i class="fa-solid fa-plug-circle-xmark"></i> Putuskan
+              </button>
+            </div>
           </div>
         </div>
 
@@ -970,6 +981,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="app.js?v=20260731_guestro"></script>
+  <script src="app.js?v=20260731_fbaccord"></script>
 </body>
 </html>
