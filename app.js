@@ -2684,7 +2684,6 @@ window._saveFirebaseConfig = function() {
   localStorage.setItem('wallet_firebase_config', val);
   alert('Firebase Config berhasil disimpan. Menghubungkan ke Realtime Cloud Database...');
   window._initFirebaseSync();
-  const input = document.getElementById('firebaseConfigInput');
   const saveBtn = document.getElementById('saveFirebaseBtn');
   const editBtn = document.getElementById('firebaseEditBtn');
   if (input) input.readOnly = true;
