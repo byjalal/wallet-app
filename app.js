@@ -108,6 +108,7 @@ class WalletState {
   }
 
   addTransaction(tx) {
+    if (this.isGuestMode) return null;
     tx.id = 'tx-' + Date.now();
     this.transactions.unshift(tx);
 
@@ -128,6 +129,7 @@ class WalletState {
   }
 
   deleteTransaction(id) {
+    if (this.isGuestMode) return;
     const tx = this.transactions.find(t => t.id === id);
     if (tx) {
       const acc = this.accounts.find(a => a.id === tx.account);
@@ -251,6 +253,7 @@ function initUI() {
     console.error('[UnhandledPromiseRejection]', e.reason);
   });
   console.log('[initUI] App initializing...');
+  if (state.isGuestMode) resetWalletDataToDefaults();
   applyTheme();
   updateHideNominalUI();
   updateSyncStatusWidget();
@@ -1631,6 +1634,10 @@ function setupEventListeners() {
   if (mobileAddBtn) {
     mobileAddBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (state.isGuestMode) {
+        window._openAuthModal();
+        return;
+      }
       openTxModalFunc();
     });
   }
@@ -1663,7 +1670,13 @@ function setupEventListeners() {
     txModal.style.display = '';
     txModal.classList.add('active');
   };
-  window._openTxModal = openTxModalFunc;
+  window._openTxModal = function() {
+    if (state.isGuestMode) {
+      window._openAuthModal();
+      return;
+    }
+    openTxModalFunc();
+  };
 
   const openAddTxBtn = document.getElementById('openAddTransactionBtn');
   if (openAddTxBtn) openAddTxBtn.addEventListener('click', openTxModalFunc);
@@ -1674,6 +1687,10 @@ function setupEventListeners() {
   document.getElementById('txForm').addEventListener('submit', (e) => {
     e.preventDefault();
     console.log('[txForm] submit handler started');
+    if (state.isGuestMode) {
+      window._openAuthModal();
+      return;
+    }
     const activeTypeBtn = document.querySelector('.type-btn.active');
     const type = activeTypeBtn ? activeTypeBtn.dataset.type : 'EXPENSE';
 
@@ -1690,43 +1707,24 @@ function setupEventListeners() {
 
     const savedTx = state.addTransaction(tx);
     console.log('[txForm] savedTx:', savedTx, 'total tx count:', state.transactions.length);
+
     txModal.classList.remove('active');
     txModal.style.display = 'none';
     console.log('[txForm] modal closed, rendering...');
 
-    try {
-      renderDashboard();
-      console.log('[txForm] renderDashboard ok');
-    } catch (err) {
-      console.error('[txForm] renderDashboard error:', err);
-      alert('Error renderDashboard: ' + err.message);
-    }
-    try {
-      renderTransactionsTable();
-      console.log('[txForm] renderTransactionsTable ok');
-    } catch (err) {
-      console.error('[txForm] renderTransactionsTable error:', err);
-      alert('Error renderTransactionsTable: ' + err.message);
-    }
-    try {
-      renderAccounts();
-      console.log('[txForm] renderAccounts ok');
-    } catch (err) {
-      console.error('[txForm] renderAccounts error:', err);
-      alert('Error renderAccounts: ' + err.message);
-    }
-    try {
-      renderBudgetsAndGoals();
-      console.log('[txForm] renderBudgetsAndGoals ok');
-    } catch (err) {
-      console.error('[txForm] renderBudgetsAndGoals error:', err);
-      alert('Error renderBudgetsAndGoals: ' + err.message);
-    }
-
-    populateFormDropdowns();
-    console.log('[txForm] populateFormDropdowns ok');
-
-    txModal.style.display = '';
+    const safeRender = (name, fn) => {
+      try {
+        fn();
+        console.log('[txForm] ' + name + ' ok');
+      } catch (err) {
+        console.error('[txForm] ' + name + ' error:', err);
+      }
+    };
+    safeRender('renderDashboard', renderDashboard);
+    safeRender('renderTransactionsTable', renderTransactionsTable);
+    safeRender('renderAccounts', renderAccounts);
+    safeRender('renderBudgetsAndGoals', renderBudgetsAndGoals);
+    safeRender('populateFormDropdowns', populateFormDropdowns);
     console.log('[txForm] submit handler done');
   });
 
@@ -2502,10 +2500,14 @@ window._startFirebaseListener = function() {
 
     _isFirebaseRemoteUpdate = false;
 
-    renderDashboard();
-    renderAccounts();
-    renderBudgetsAndGoals();
-    renderTransactionsTable();
+    try {
+      renderDashboard();
+      renderAccounts();
+      renderBudgetsAndGoals();
+      renderTransactionsTable();
+    } catch (err) {
+      console.error('[Firebase] remote render error:', err);
+    }
   });
 };
 
