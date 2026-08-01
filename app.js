@@ -2122,6 +2122,7 @@ function setupEventListeners() {
         state.isLoggedIn = true;
         state.isGuestMode = false;
         sessionStorage.setItem('wallet_session_active', 'true');
+        resetWalletDataToDefaults();
         await window._syncOnLogin();
         window._startFirebaseListener();
         if (errorMsg) errorMsg.style.display = 'none';
@@ -2151,6 +2152,11 @@ function setupEventListeners() {
         }
 
         if (credentialsOk) {
+          const switchingUser = state.username && state.username.toLowerCase() !== username.toLowerCase();
+          if (switchingUser) {
+            console.log('[Auth] switching user, discarding previous local cache');
+            resetWalletDataToDefaults();
+          }
           state.username = username;
           state.passcode = passcode;
           state.isRegistered = true;
@@ -2243,6 +2249,21 @@ function showToast(message, type = 'info') {
 // Authentication & Access Control Functions
 window._authFormMode = 'LOGIN'; // 'LOGIN' or 'REGISTER'
 
+function resetWalletDataToDefaults() {
+  state.accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+  state.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+  state.transactions = generateSampleTransactions();
+  state.budgets = JSON.parse(JSON.stringify(DEFAULT_BUDGETS));
+  state.goals = JSON.parse(JSON.stringify(DEFAULT_GOALS));
+  state._lastUpdate = 0;
+  localStorage.setItem('wallet_last_update', 0);
+  localStorage.setItem('wallet_accounts', JSON.stringify(state.accounts));
+  localStorage.setItem('wallet_categories', JSON.stringify(state.categories));
+  localStorage.setItem('wallet_transactions', JSON.stringify(state.transactions));
+  localStorage.setItem('wallet_budgets', JSON.stringify(state.budgets));
+  localStorage.setItem('wallet_goals', JSON.stringify(state.goals));
+}
+
 window._openAuthModal = function() {
   const modal = document.getElementById('authModal');
   if (!modal) return;
@@ -2299,12 +2320,20 @@ window._updateAuthFormUI = function() {
 };
 
 window._enterGuestMode = function() {
+  const wasLoggedIn = state.isLoggedIn;
   state.isLoggedIn = false;
   state.isGuestMode = true;
   sessionStorage.removeItem('wallet_session_active');
   window._stopFirebaseListener();
+  if (wasLoggedIn) resetWalletDataToDefaults();
   window._closeAuthModal();
   updateAuthUI();
+  if (wasLoggedIn) {
+    renderDashboard();
+    renderTransactionsTable();
+    renderAccounts();
+    renderBudgetsAndGoals();
+  }
 };
 
 window._logoutOwner = function() {
@@ -2313,6 +2342,7 @@ window._logoutOwner = function() {
   state.isGuestMode = true;
   sessionStorage.removeItem('wallet_session_active');
   try { window._stopFirebaseListener(); } catch (err) { console.error('[Auth] stop listener error:', err); }
+  resetWalletDataToDefaults();
   try {
     updateAuthUI();
   } catch (err) {
