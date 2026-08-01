@@ -1952,3 +1952,269 @@ body.guest-mode #guestModeBanner {
     display: none !important;
   }
 }
+
+/* =========================================================
+   PROFESSIONAL UI POLISH
+   ========================================================= */
+
+:root {
+  --primary-foreground: #fff;
+  --ring: rgba(99, 102, 241, 0.45);
+  --shadow-hover: 0 12px 28px -12px rgba(0, 0, 0, 0.45);
+}
+
+/* --- Typography refinements --- */
+body {
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
+}
+
+.money-value,
+.stat-value,
+.amount-display {
+  font-variant-numeric: tabular-nums;
+}
+
+.amount-display {
+  font-weight: 600;
+}
+
+/* --- Focus rings (accessibility) --- */
+.btn:focus-visible,
+.icon-btn-sm:focus-visible,
+.nav-btn:focus-visible,
+.type-btn:focus-visible,
+.period-btn:focus-visible,
+.period-select:focus-visible,
+.icon-option-btn:focus-visible,
+.close-btn:focus-visible,
+.floating-hide-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18), 0 0 12px var(--primary-glow);
+}
+
+.input-prefix-wrapper:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18), 0 0 12px var(--primary-glow);
+}
+
+/* --- Buttons: pressed + hover lift --- */
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-emerald:hover {
+  box-shadow: 0 6px 18px -6px var(--emerald-glow);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- Cards: refined elevation on hover --- */
+.glass-card:hover {
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--shadow-hover);
+}
+
+.budget-card,
+.account-card,
+.goal-card,
+.hub-card {
+  box-shadow: var(--shadow-sm);
+}
+
+.budget-card:hover,
+.account-card:hover,
+.goal-card:hover,
+.hub-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* --- Stat cards: soft gradient + colored icon chips --- */
+.stat-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 55%);
+}
+
+.stat-card .stat-icon-wrapper {
+  background: rgba(99, 102, 241, 0.14);
+  color: var(--primary);
+}
+
+.stat-card.income .stat-icon-wrapper {
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--emerald);
+}
+
+.stat-card.expense .stat-icon-wrapper {
+  background: rgba(244, 63, 94, 0.14);
+  color: var(--rose);
+}
+
+.stat-card.budget .stat-icon-wrapper {
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--amber);
+}
+
+/* --- Sidebar nav active state --- */
+.nav-btn.active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.16), rgba(99, 102, 241, 0.03));
+  box-shadow: inset 3px 0 0 var(--primary);
+  color: var(--text-main);
+}
+
+.nav-btn.active i {
+  color: var(--primary);
+}
+
+/* --- Accordion header hover feedback --- */
+.accordion-header:hover,
+.tx-month-header:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: var(--radius-md);
+}
+
+/* --- Header title polish --- */
+.header-title h1 {
+  letter-spacing: -0.03em;
+}
+
+.header-title p {
+  max-width: 560px;
+}
+
+/* --- Modal polish --- */
+.modal-overlay.active {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-modal {
+  box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+/* --- Table row hover refinement --- */
+.custom-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* --- Badge variants --- */
+.badge-success {
+  background: rgba(16, 185, 129, 0.14);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.14);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.badge-danger {
+  background: rgba(244, 63, 94, 0.14);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.badge-cyan {
+  background: rgba(6, 182, 212, 0.14);
+  color: #06b6d4;
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.badge-primary {
+  background: rgba(99, 102, 241, 0.14);
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* --- Transaction list item hover --- */
+.tx-item-card {
+  transition: background 0.2s ease;
+}
+
+.tx-item-card:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* --- Mobile bottom nav active indicator --- */
+@media (max-width: 768px) {
+  .nav-btn {
+    position: relative;
+  }
+
+  .nav-btn.active::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 3px;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+  }
+}
+
+/* --- Light theme parity --- */
+body.light-theme .nav-btn.active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.10), rgba(99, 102, 241, 0.02));
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+body.light-theme .stat-card {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.025), rgba(0, 0, 0, 0) 55%);
+}
+
+body.light-theme .accordion-header:hover,
+body.light-theme .tx-month-header:hover,
+body.light-theme .tx-item-card:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.light-theme .glass-card:hover {
+  box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.18);
+}
+
+body.light-theme ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* --- Respect reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
