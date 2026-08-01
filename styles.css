@@ -34,9 +34,9 @@
   --radius-full: 9999px;
   
   --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 8px 24px -6px rgba(99, 102, 241, 0.25);
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-glow: none;
 }
 
 /* Shadcn UI Light Mode Tokens (Zinc 50 Theme) */
@@ -50,7 +50,9 @@ body.light-theme {
   --text-main: #09090b;
   --text-muted: #71717a;
   --text-dim: #a1a1aa;
-  --shadow-glow: 0 8px 24px -6px rgba(99, 102, 241, 0.15);
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-glow: none;
   
   background-color: #f8fafc;
   color: #09090b;
@@ -76,7 +78,6 @@ body.light-theme .nav-btn.active {
 }
 
 body.light-theme .glass-card {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
   border-color: #e4e4e7;
 }
 
@@ -111,7 +112,6 @@ body.light-theme .custom-table tbody tr:hover {
 body.light-theme .glass-modal {
   background: #ffffff;
   border-color: #e4e4e7;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 body.light-theme .form-group input, 
@@ -364,7 +364,6 @@ input, select, textarea {
 
 .status-indicator.online {
   background: var(--emerald);
-  box-shadow: 0 0 10px var(--emerald);
 }
 
 .status-info {
@@ -888,9 +887,8 @@ input, select, textarea {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: 8px 14px;
-  flex: 1 1 100%;
-  min-width: 100px;
-  box-shadow: var(--shadow-sm);
+  flex: 1 1 280px;
+  min-width: 200px;
 }
 
 .search-box i { color: var(--text-muted); }
@@ -909,7 +907,8 @@ input, select, textarea {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  width: 100%;
+  flex: 1 1 auto;
+  width: auto;
 }
 
 .filter-group select {
@@ -1156,7 +1155,6 @@ input, select, textarea {
   width: 90%;
   max-width: 520px;
   padding: 24px;
-  box-shadow: var(--shadow-md);
   transform: scale(0.95);
   transition: var(--transition);
 }
@@ -1517,7 +1515,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border: none !important;
     border-top: 1px solid var(--glass-border) !important;
     border-radius: 0 !important;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) !important;
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
@@ -1531,7 +1528,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   body.light-theme .nav-menu {
     background: #ffffff !important;
     border-top-color: #e4e4e7 !important;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05) !important;
   }
 
   /* Nav Buttons */
@@ -1597,7 +1593,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     align-items: center;
     justify-content: center;
     font-size: 20px;
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
     position: absolute;
     top: -18px;
     left: 50%;
@@ -1748,7 +1743,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }
 
 /* Account Dropdown Menu */
@@ -1898,7 +1892,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(99, 102, 241, 0.3);
   cursor: pointer;
   z-index: 990;
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1909,7 +1902,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .floating-hide-btn:hover {
   transform: scale(1.08);
   border-color: var(--primary);
-  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.4);
 }
 
 .floating-hide-btn:active {
@@ -1920,7 +1912,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: var(--primary);
   color: #ffffff;
   border-color: var(--primary);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
 }
 
 @media (min-width: 768px) {
@@ -1960,7 +1951,6 @@ body.guest-mode #guestModeBanner {
 :root {
   --primary-foreground: #fff;
   --ring: rgba(99, 102, 241, 0.45);
-  --shadow-hover: 0 12px 28px -12px rgba(0, 0, 0, 0.45);
 }
 
 /* --- Typography refinements --- */
@@ -1996,12 +1986,12 @@ body {
 .form-group input:focus,
 .form-group select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18), 0 0 12px var(--primary-glow);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 .input-prefix-wrapper:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18), 0 0 12px var(--primary-glow);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 /* --- Buttons: pressed + hover lift --- */
@@ -2011,11 +2001,6 @@ body {
 
 .btn-primary:hover {
   background: var(--primary-hover);
-  box-shadow: var(--shadow-glow);
-}
-
-.btn-emerald:hover {
-  box-shadow: 0 6px 18px -6px var(--emerald-glow);
 }
 
 .btn:disabled {
@@ -2024,25 +2009,17 @@ body {
   transform: none;
 }
 
-/* --- Cards: refined elevation on hover --- */
+/* --- Cards: clean flat hover state --- */
 .glass-card:hover {
   border-color: var(--glass-border-hover);
-  box-shadow: var(--shadow-hover);
-}
-
-.budget-card,
-.account-card,
-.goal-card,
-.hub-card {
-  box-shadow: var(--shadow-sm);
 }
 
 .budget-card:hover,
 .account-card:hover,
 .goal-card:hover,
 .hub-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+  border-color: var(--glass-border-hover);
 }
 
 /* --- Stat cards: soft gradient + colored icon chips --- */
@@ -2101,10 +2078,6 @@ body {
 .modal-overlay.active {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-}
-
-.glass-modal {
-  box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .close-btn {
@@ -2202,7 +2175,7 @@ body.light-theme .tx-item-card:hover {
 }
 
 body.light-theme .glass-card:hover {
-  box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.18);
+  border-color: #d4d4d8;
 }
 
 body.light-theme ::-webkit-scrollbar-thumb {

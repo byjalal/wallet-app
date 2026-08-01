@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260801_propolish">
+  <link rel="stylesheet" href="styles.css?v=20260801_cleanflat">
   <!-- FontAwesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -437,7 +437,7 @@
           </div>
         </div>
 
-        <!-- SYNC & SPREADSHEET GROUP -->
+        <!-- SYNC STATUS (accordion header) -->
         <div class="section-card glass-card mt-4 owner-only">
           <div class="card-header accordion-header" onclick="window.toggleSpreadsheetGroup()" style="margin-bottom: 12px; cursor: pointer; user-select: none;">
             <h3 style="display: flex; align-items: center; gap: 8px; width: 100%;">
@@ -456,20 +456,21 @@
               <i class="fa-solid fa-rotate"></i>
             </button>
           </div>
+        </div>
 
-          <div id="spreadsheetGroupBody">
-            <div class="spreadsheet-banner glass-card mt-4">
-              <div class="banner-content">
-                <div class="banner-badge"><i class="fa-solid fa-file-excel"></i> Integrasi Data Eksternal</div>
-                <h2>Pusat Sinkronisasi Spreadsheet</h2>
-                <p>Kelola data keuangan Anda dengan kebebasan penuh. Ekspor ke Excel, impor transaksi lama, atau hubungkan ke Google Sheets.</p>
-              </div>
-              <div class="banner-illustration">
-                <i class="fa-solid fa-table-cells-large"></i>
-              </div>
+        <div id="spreadsheetGroupBody">
+          <div class="spreadsheet-banner glass-card mt-4">
+            <div class="banner-content">
+              <div class="banner-badge"><i class="fa-solid fa-file-excel"></i> Integrasi Data Eksternal</div>
+              <h2>Pusat Sinkronisasi Spreadsheet</h2>
+              <p>Kelola data keuangan Anda dengan kebebasan penuh. Ekspor ke Excel, impor transaksi lama, atau hubungkan ke Google Sheets.</p>
             </div>
+            <div class="banner-illustration">
+              <i class="fa-solid fa-table-cells-large"></i>
+            </div>
+          </div>
 
-            <div class="spreadsheet-options-grid mt-4">
+          <div class="spreadsheet-options-grid mt-4">
           <!-- Card 1: Export -->
           <div class="hub-card glass-card">
             <div class="hub-icon text-cyan"><i class="fa-solid fa-file-export"></i></div>
@@ -561,7 +562,6 @@
           </div>
         </div>
         </div>
-      </div>
         <!-- RESET DATA / MULAI DARI AWAL -->
         <div class="section-card glass-card mt-6 owner-only" style="border-color: rgba(244, 63, 94, 0.3);">
           <div class="card-header" style="margin-bottom: 12px;">
