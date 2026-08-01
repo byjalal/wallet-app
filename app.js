@@ -1663,6 +1663,7 @@ function setupEventListeners() {
     txModal.style.display = '';
     txModal.classList.add('active');
   };
+  window._openTxModal = openTxModalFunc;
 
   const openAddTxBtn = document.getElementById('openAddTransactionBtn');
   if (openAddTxBtn) openAddTxBtn.addEventListener('click', openTxModalFunc);
@@ -2401,11 +2402,25 @@ function updateAuthUI() {
         adminPanel.style.setProperty('display', 'none', 'important');
       }
     }
+
+    const firebaseSection = document.getElementById('firebaseSectionCard');
+    if (firebaseSection) {
+      if (_isAdmin()) {
+        firebaseSection.style.setProperty('display', 'block', 'important');
+      } else {
+        firebaseSection.style.setProperty('display', 'none', 'important');
+      }
+    }
+
+    _initSpreadsheetGroup();
   } else {
     document.body.classList.add('guest-mode');
     document.querySelectorAll('.owner-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
     const adminPanel = document.getElementById('adminPanelSection');
     if (adminPanel) adminPanel.style.setProperty('display', 'none', 'important');
+    const firebaseSection = document.getElementById('firebaseSectionCard');
+    if (firebaseSection) firebaseSection.style.setProperty('display', 'none', 'important');
+    _initSpreadsheetGroup();
     if (guestModeBanner) guestModeBanner.style.display = 'flex';
 
     if (headerStatus) {
@@ -2650,6 +2665,27 @@ window._disconnectFirebase = function() {
     window._initFirebaseSync();
   }
 };
+
+// ==========================================
+// SYNC & SPREADSHEET GROUP ACCORDION
+// ==========================================
+window.toggleSpreadsheetGroup = function() {
+  const body = document.getElementById('spreadsheetGroupBody');
+  const chev = document.getElementById('spreadsheetGroupChev');
+  if (!body) return;
+  const willHide = body.style.display !== 'none';
+  body.style.display = willHide ? 'none' : '';
+  if (chev) chev.style.transform = willHide ? 'rotate(-90deg)' : '';
+};
+
+function _initSpreadsheetGroup() {
+  const body = document.getElementById('spreadsheetGroupBody');
+  const chev = document.getElementById('spreadsheetGroupChev');
+  if (!body) return;
+  const collapse = !state.isGuestMode && window.innerWidth < 768;
+  body.style.display = collapse ? 'none' : '';
+  if (chev) chev.style.transform = collapse ? 'rotate(-90deg)' : '';
+}
 
 // ==========================================
 // ADMIN PANEL (Kelola Pengguna)

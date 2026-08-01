@@ -68,6 +68,9 @@
           <h1 id="pageTitle" style="margin: 0;">Overview Dashboard</h1>
           <p id="pageSubtitle" style="margin-top: 4px;">Ringkasan keuangan dan analisis pengeluaran Anda</p>
         </div>
+        <button class="btn btn-primary desktop-only" id="desktopAddTxBtn" onclick="window._openTxModal()" style="flex-shrink: 0; gap: 6px;" title="Tambah Transaksi">
+          <i class="fa-solid fa-plus"></i> Tambah Transaksi
+        </button>
         <div class="header-user-status" id="headerUserStatus" style="flex-shrink: 0;">
           <!-- Dynamic user badge / login button -->
         </div>
@@ -423,11 +426,15 @@
           </div>
         </div>
 
-        <!-- SYNC STATUS -->
+        <!-- SYNC & SPREADSHEET GROUP -->
         <div class="section-card glass-card mt-4 owner-only">
-          <div class="card-header" style="margin-bottom: 16px;">
-            <h3><i class="fa-solid fa-cloud text-cyan"></i> Status Sinkronisasi Google Sheets</h3>
+          <div class="card-header" onclick="window.toggleSpreadsheetGroup()" style="margin-bottom: 12px; cursor: pointer; user-select: none;">
+            <h3 style="display: flex; align-items: center; gap: 8px; width: 100%;">
+              <i class="fa-solid fa-cloud text-cyan"></i> Status Sinkronisasi Google Sheets
+              <span id="spreadsheetGroupChev" style="transition: transform .2s; font-size: 12px; color: var(--text-muted); margin-left: auto; flex-shrink: 0;"><i class="fa-solid fa-chevron-down"></i></span>
+            </h3>
           </div>
+
           <div class="sync-status-card" id="syncStatusWidget" style="margin: 0;">
             <div class="status-indicator offline"></div>
             <div class="status-info">
@@ -438,20 +445,20 @@
               <i class="fa-solid fa-rotate"></i>
             </button>
           </div>
-        </div>
 
-        <div class="spreadsheet-banner glass-card mt-6">
-          <div class="banner-content">
-            <div class="banner-badge"><i class="fa-solid fa-file-excel"></i> Integrasi Data Eksternal</div>
-            <h2>Pusat Sinkronisasi Spreadsheet</h2>
-            <p>Kelola data keuangan Anda dengan kebebasan penuh. Ekspor ke Excel, impor transaksi lama, atau hubungkan ke Google Sheets.</p>
-          </div>
-          <div class="banner-illustration">
-            <i class="fa-solid fa-table-cells-large"></i>
-          </div>
-        </div>
+          <div id="spreadsheetGroupBody">
+            <div class="spreadsheet-banner glass-card mt-4">
+              <div class="banner-content">
+                <div class="banner-badge"><i class="fa-solid fa-file-excel"></i> Integrasi Data Eksternal</div>
+                <h2>Pusat Sinkronisasi Spreadsheet</h2>
+                <p>Kelola data keuangan Anda dengan kebebasan penuh. Ekspor ke Excel, impor transaksi lama, atau hubungkan ke Google Sheets.</p>
+              </div>
+              <div class="banner-illustration">
+                <i class="fa-solid fa-table-cells-large"></i>
+              </div>
+            </div>
 
-        <div class="spreadsheet-options-grid mt-6">
+            <div class="spreadsheet-options-grid mt-4">
           <!-- Card 1: Export -->
           <div class="hub-card glass-card">
             <div class="hub-icon text-cyan"><i class="fa-solid fa-file-export"></i></div>
@@ -490,7 +497,7 @@
         </div>
 
         <!-- Google Sheets Apps Script Setup Guide -->
-        <div class="section-card glass-card mt-6">
+        <div class="section-card glass-card mt-4">
           <div class="card-header">
             <h3><i class="fa-solid fa-code text-cyan"></i> Panduan Singkat Setup Google Sheets Apps Script</h3>
           </div>
@@ -540,6 +547,10 @@
               <li>Atur <em>Execute as: Me</em> dan <em>Who has access: Anyone</em>. Klik <strong>Deploy</strong>.</li>
               <li>Salin <strong>Web App URL</strong> yang dihasilkan, lalu tempelkan di menu Pengaturan Google Sheets Sync!</li>
             </ol>
+          </div>
+        </div>
+        </div>
+      </div>
         <!-- RESET DATA / MULAI DARI AWAL -->
         <div class="section-card glass-card mt-6" style="border-color: rgba(244, 63, 94, 0.3);">
           <div class="card-header" style="margin-bottom: 12px;">
@@ -959,6 +970,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="app.js?v=20260731_usersep"></script>
+  <script src="app.js?v=20260731_desktopadd"></script>
 </body>
 </html>
