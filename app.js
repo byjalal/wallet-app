@@ -1779,92 +1779,65 @@ function setupEventListeners() {
   });
 
   // ==============================================
-  // TAMBAH TRANSAKSI VIA FOTO (NOTA / RECEIPT OCR)
+  // TAMBAH TRANSAKSI VIA FOTO (AI GEMINI VISION)
   // ==============================================
   let _parsedReceiptItems = [];
   let _currentReceiptImage = null;
-  let _ocrWorker = null;
 
   function _escHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  function _updateOcrProgress(status, progress) {
-    const el = document.getElementById('ocrStatusText');
-    const fill = document.getElementById('ocrProgressFill');
-    if (!el || !fill) return;
-    const labels = {
-      'loading tesseract core': 'Memuat mesin OCR...',
-      'initializing tesseract': 'Menyiapkan mesin...',
-      'loading language traineddata': 'Memuat data bahasa...',
-      'initializing api': 'Menyiapkan API...',
-      'recognizing text': 'Mendeteksi tulisan...'
+  const _GEMINI_MODEL = 'gemini-2.0-flash';
+
+  function _getGeminiKey() {
+    return localStorage.getItem('wallet_gemini_key') || '';
+  }
+
+  function _parseGeminiJson(text) {
+    let cleaned = String(text || '').trim();
+    cleaned = cleaned.replace(/^```(?:json)?/i, '').replace(/```\s*$/, '').trim();
+    const start = cleaned.indexOf('[');
+    const end = cleaned.lastIndexOf(']');
+    if (start === -1 || end === -1) throw new Error('Respons AI tidak valid.');
+    const arr = JSON.parse(cleaned.slice(start, end + 1));
+    if (!Array.isArray(arr)) throw new Error('Respons AI tidak valid.');
+    return arr.map(it => {
+      const name = String(it.name || it.item || '').trim() || 'Item';
+      const qty = parseInt(it.qty, 10) || 1;
+      const unitPrice = Number(it.unitPrice != null ? it.unitPrice : it.price) || 0;
+      const total = Number(it.total) || (unitPrice * qty) || 0;
+      return { name, qty, unitPrice, total };
+    }).filter(it => it.total > 0);
+  }
+
+  async function _detectWithGemini(canvas) {
+    const key = _getGeminiKey();
+    if (!key) throw new Error('Gemini API key belum diatur. Buka Pengaturan → Deteksi Nota AI (Gemini).');
+    const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+    const prompt = 'Baca struk/nota belanja pada gambar ini dan keluarkan SEMUA item yang dibeli sebagai JSON array tanpa teks lain. Format tiap elemen: {"name":"nama item","qty":1,"unitPrice":<harga satuan rupiah, angka tanpa simbol>, "total":<total baris>}. Aturan: 1) hanya item barang/jasa yang benar-benar dibeli; 2) ABAIKAN header, alamat, nomor nota, total, subtotal, pajak, ppn, diskon, tunai, kembalian, dan teks lain yang bukan item; 3) jika qty tidak tertera gunakan 1; 4) jika harga satuan tidak terlihat tapi total baris ada, isi unitPrice = total baris. Balas HANYA dengan JSON valid.';
+    const body = {
+      contents: [{
+        parts: [
+          { inline_data: { mime_type: 'image/jpeg', data: base64 } },
+          { text: prompt }
+        ]
+      }]
     };
-    el.textContent = labels[status] || (status || 'Mendeteksi...');
-    if (status === 'recognizing text') {
-      fill.style.width = Math.round((progress || 0) * 100) + '%';
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + _GEMINI_MODEL + ':generateContent?key=' + encodeURIComponent(key), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      let errMsg = 'Gemini error (' + res.status + ')';
+      try { errMsg += ': ' + (await res.text()).slice(0, 200); } catch (e) {}
+      throw new Error(errMsg);
     }
-  }
-
-  async function _getOcrWorker() {
-    if (_ocrWorker) return _ocrWorker;
-    if (typeof Tesseract === 'undefined') return null;
-    _ocrWorker = await Tesseract.createWorker('eng+ind', 1, {
-      logger: m => _updateOcrProgress(m.status, m.progress)
-    });
-    return _ocrWorker;
-  }
-
-  const _RECEIPT_SKIP = ['total', 'bayar', 'tunai', 'kembali', 'kembalian', 'subtotal', 'pajak', 'ppn', 'diskon', 'potongan', 'jumlah', 'item', 'qty', 'kuantitas', 'nota', 'tanggal', 'tgl', 'kasir', 'struk', 'terima kasih', 'selamat datang', 'member', 'eceran', 'grosir', 'barcode', 'harga', 'satuan', 'rp', 'stok', 'pelanggan', 'dpp', 'materai', 'service', 'pembulatan', 'voucher', 'member'];
-
-  function _parseIdrNum(str) {
-    if (str == null) return null;
-    const cleaned = String(str).replace(/rp/gi, '').replace(/[^0-9.,]/g, '');
-    if (!cleaned) return null;
-    const n = Number(cleaned.replace(/\./g, '').replace(',', '.'));
-    return isFinite(n) && n > 0 ? n : null;
-  }
-
-  function parseReceiptLines(text) {
-    const lines = String(text || '').split('\n').map(l => l.trim()).filter(Boolean);
-    const items = [];
-    lines.forEach(raw => {
-      const lower = raw.toLowerCase();
-      if (_RECEIPT_SKIP.some(w => lower.includes(w))) return;
-      const numMatches = raw.match(/\d[\d.,]*/g) || [];
-      if (!numMatches.length) return;
-
-      const lastNum = numMatches[numMatches.length - 1];
-      const lineTotal = _parseIdrNum(lastNum);
-      if (!lineTotal) return;
-
-      let qty = 1;
-      let unitPrice = null;
-      const qtyMatch = raw.match(/(\d{1,3})\s*[xX*]\s*(\d[\d.,]*)/);
-      if (qtyMatch) {
-        qty = parseInt(qtyMatch[1], 10) || 1;
-        unitPrice = _parseIdrNum(qtyMatch[2]);
-      }
-
-      let name = raw.slice(0, raw.lastIndexOf(lastNum)).trim();
-      name = name
-        .replace(/\d{1,3}\s*[xX*]\s*\d[\d.,]*/g, '')
-        .replace(/[|\-–—:;,=]+$/g, '')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
-
-      if (!name || name.length < 2) return;
-      if (/^(barang|nama|produk|deskripsi|description)/i.test(name)) return;
-
-      const price = unitPrice || lineTotal;
-      items.push({
-        name,
-        qty,
-        unitPrice: price,
-        total: qty > 1 && unitPrice ? unitPrice * qty : lineTotal
-      });
-    });
-    return items;
+    const data = await res.json();
+    const parts = (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+    const text = parts.map(p => p.text || '').join('');
+    return _parseGeminiJson(text);
   }
 
   function _updateReceiptCount() {
@@ -1933,14 +1906,13 @@ function setupEventListeners() {
       const statusText = document.getElementById('ocrStatusText');
       const fill = document.getElementById('ocrProgressFill');
       if (fill) fill.style.width = '0%';
+      if (statusText) statusText.textContent = 'Menganalisis nota dengan AI...';
       try {
-        const worker = await _getOcrWorker();
-        if (!worker) throw new Error('Mesin OCR tidak termuat. Periksa koneksi internet lalu muat ulang.');
-        const { data } = await worker.recognize(_currentReceiptImage);
-        renderReceiptItems(parseReceiptLines(data.text));
+        const items = await _detectWithGemini(_currentReceiptImage);
+        renderReceiptItems(items);
       } catch (err) {
-        console.error('[Receipt OCR] error:', err);
-        if (statusText) statusText.textContent = 'Gagal mendeteksi teks: ' + err.message;
+        console.error('[Receipt AI] error:', err);
+        if (statusText) statusText.textContent = 'Gagal menganalisis nota: ' + err.message;
       } finally {
         runOcrBtn.disabled = false;
       }
@@ -2008,6 +1980,37 @@ function setupEventListeners() {
         const statusText = document.getElementById('ocrStatusText');
         if (statusText) statusText.textContent = 'Tidak ada item valid untuk ditambahkan.';
       }
+    });
+  }
+
+  // Gemini API key settings
+  const geminiKeyInput = document.getElementById('geminiKeyInput');
+  const geminiKeyStatus = document.getElementById('geminiKeyStatus');
+  if (geminiKeyInput && _getGeminiKey()) geminiKeyInput.value = _getGeminiKey();
+  if (geminiKeyStatus) {
+    geminiKeyStatus.textContent = _getGeminiKey()
+      ? 'API key tersimpan di perangkat ini (AI aktif).'
+      : 'Belum ada API key. Tambahkan agar fitur Foto Nota bekerja.';
+  }
+  const saveGeminiKeyBtn = document.getElementById('saveGeminiKeyBtn');
+  if (saveGeminiKeyBtn) {
+    saveGeminiKeyBtn.addEventListener('click', () => {
+      if (!geminiKeyInput) return;
+      const val = geminiKeyInput.value.trim();
+      if (!val) {
+        if (geminiKeyStatus) geminiKeyStatus.textContent = 'Masukkan API key terlebih dahulu.';
+        return;
+      }
+      localStorage.setItem('wallet_gemini_key', val);
+      if (geminiKeyStatus) geminiKeyStatus.textContent = 'API key tersimpan. Sekarang fitur Foto Nota memakai AI Gemini.';
+    });
+  }
+  const clearGeminiKeyBtn = document.getElementById('clearGeminiKeyBtn');
+  if (clearGeminiKeyBtn) {
+    clearGeminiKeyBtn.addEventListener('click', () => {
+      localStorage.removeItem('wallet_gemini_key');
+      if (geminiKeyInput) geminiKeyInput.value = '';
+      if (geminiKeyStatus) geminiKeyStatus.textContent = 'API key dihapus. Tambahkan kembali bila perlu.';
     });
   }
 
