@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260801_cleanflat">
+  <link rel="stylesheet" href="styles.css?v=20260802_photo">
   <!-- FontAwesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -70,6 +70,9 @@
         </div>
         <button class="btn btn-primary desktop-only" id="desktopAddTxBtn" onclick="window._openTxModal()" style="flex-shrink: 0; gap: 6px;" title="Tambah Transaksi">
           <i class="fa-solid fa-plus"></i> Tambah Transaksi
+        </button>
+        <button class="btn btn-secondary desktop-only" id="desktopPhotoTxBtn" onclick="window._openTxPhotoModal()" style="flex-shrink: 0; gap: 6px;" title="Tambah via Foto Nota">
+          <i class="fa-solid fa-camera"></i> Foto Nota
         </button>
         <div class="header-user-status" id="headerUserStatus" style="flex-shrink: 0;">
           <!-- Dynamic user badge / login button -->
@@ -593,56 +596,113 @@
       <form id="txForm">
         <input type="hidden" id="txId">
 
-        <div class="form-group">
-          <label>Tipe Transaksi</label>
-          <div class="type-selector">
-            <button type="button" class="type-btn active expense" data-type="EXPENSE">
-              <i class="fa-solid fa-arrow-up-right"></i> Pengeluaran
-            </button>
-            <button type="button" class="type-btn income" data-type="INCOME">
-              <i class="fa-solid fa-arrow-down-left"></i> Pemasukan
-            </button>
-            <button type="button" class="type-btn transfer" data-type="TRANSFER">
-              <i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer
-            </button>
-          </div>
+        <!-- Mode switcher: Manual / Via Foto -->
+        <div class="type-selector" style="margin-bottom: 16px;">
+          <button type="button" class="mode-btn active" data-mode="manual" onclick="window._setTxMode('manual')">
+            <i class="fa-solid fa-keyboard"></i> Isi Manual
+          </button>
+          <button type="button" class="mode-btn" data-mode="photo" onclick="window._setTxMode('photo')">
+            <i class="fa-solid fa-camera"></i> Via Foto (Nota)
+          </button>
         </div>
 
-        <div class="form-row">
+        <div id="txManualFields">
           <div class="form-group">
-            <label for="txAmount">Jumlah Saldo</label>
-            <div class="input-prefix-wrapper">
-              <span class="input-prefix" id="formCurrencyPrefix">Rp</span>
-              <input type="text" inputmode="numeric" id="txAmount" required placeholder="0">
+            <label>Tipe Transaksi</label>
+            <div class="type-selector">
+              <button type="button" class="type-btn active expense" data-type="EXPENSE">
+                <i class="fa-solid fa-arrow-up-right"></i> Pengeluaran
+              </button>
+              <button type="button" class="type-btn income" data-type="INCOME">
+                <i class="fa-solid fa-arrow-down-left"></i> Pemasukan
+              </button>
+              <button type="button" class="type-btn transfer" data-type="TRANSFER">
+                <i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer
+              </button>
             </div>
-            <div class="amount-helper-text" id="txAmountHelper" style="font-size: 11px; font-weight: 600; color: var(--primary); margin-top: 4px; display: none;"></div>
           </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="txAmount">Jumlah Saldo</label>
+              <div class="input-prefix-wrapper">
+                <span class="input-prefix" id="formCurrencyPrefix">Rp</span>
+                <input type="text" inputmode="numeric" id="txAmount" required placeholder="0">
+              </div>
+              <div class="amount-helper-text" id="txAmountHelper" style="font-size: 11px; font-weight: 600; color: var(--primary); margin-top: 4px; display: none;"></div>
+            </div>
+            <div class="form-group">
+              <label for="txDate">Tanggal</label>
+              <input type="date" id="txDate" required>
+            </div>
+          </div>
+
+          <div class="form-row" id="categoryAndAccountRow">
+            <div class="form-group" id="categoryFormGroup">
+              <label for="txCategory">Kategori</label>
+              <select id="txCategory" required></select>
+            </div>
+            <div class="form-group">
+              <label for="txAccount">Dompet / Rekening</label>
+              <select id="txAccount" required></select>
+            </div>
+          </div>
+
+          <!-- Transfer destination account (shown only when type is TRANSFER) -->
+          <div class="form-group hidden" id="transferTargetGroup">
+            <label for="txTargetAccount">Dompet Tujuan Transfer</label>
+            <select id="txTargetAccount"></select>
+          </div>
+
           <div class="form-group">
-            <label for="txDate">Tanggal</label>
-            <input type="date" id="txDate" required>
+            <label for="txNote">Catatan / Keterangan</label>
+            <input type="text" id="txNote" placeholder="Misal: Makan Siang Nasi Padang">
           </div>
         </div>
 
-        <div class="form-row" id="categoryAndAccountRow">
-          <div class="form-group" id="categoryFormGroup">
-            <label for="txCategory">Kategori</label>
-            <select id="txCategory" required></select>
-          </div>
+        <div id="txPhotoFields" style="display: none;">
           <div class="form-group">
-            <label for="txAccount">Dompet / Rekening</label>
-            <select id="txAccount" required></select>
+            <label>Foto Nota</label>
+            <div class="drop-zone" id="receiptDropZone">
+              <input type="file" id="receiptFileInput" accept="image/*" capture="environment">
+              <i class="fa-solid fa-camera drop-icon"></i>
+              <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Klik untuk memotret / memilih foto nota</p>
+            </div>
+            <img id="receiptPreview" style="display: none; margin-top: 12px; max-height: 240px; width: 100%; object-fit: contain; border-radius: var(--radius-md); border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03);">
           </div>
-        </div>
 
-        <!-- Transfer destination account (shown only when type is TRANSFER) -->
-        <div class="form-group hidden" id="transferTargetGroup">
-          <label for="txTargetAccount">Dompet Tujuan Transfer</label>
-          <select id="txTargetAccount"></select>
-        </div>
+          <button type="button" class="btn btn-primary btn-full" id="runOcrBtn" disabled>
+            <i class="fa-solid fa-magnifying-glass"></i> Deteksi Teks Nota
+          </button>
 
-        <div class="form-group">
-          <label for="txNote">Catatan / Keterangan</label>
-          <input type="text" id="txNote" placeholder="Misal: Makan Siang Nasi Padang">
+          <div id="ocrStatus" style="display: none; margin-top: 12px;">
+            <div class="mini-progress-bar"><div class="mini-progress-fill" id="ocrProgressFill" style="width: 0%;"></div></div>
+            <span id="ocrStatusText" style="display: block; margin-top: 6px; font-size: 12px; color: var(--text-muted);">Mempersiapkan OCR...</span>
+          </div>
+
+          <div id="receiptItemsSection" style="display: none; margin-top: 16px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Item Terdeteksi — periksa & edit bila perlu</label>
+            <div id="receiptItemsList" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; margin-bottom: 12px;"></div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="receiptCategory">Kategori (untuk semua)</label>
+                <select id="receiptCategory"></select>
+              </div>
+              <div class="form-group">
+                <label for="receiptAccount">Dompet / Rekening</label>
+                <select id="receiptAccount"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="receiptDate">Tanggal</label>
+              <input type="date" id="receiptDate">
+            </div>
+
+            <button type="button" class="btn btn-primary btn-full" id="addReceiptItemsBtn">
+              <i class="fa-solid fa-plus"></i> Tambah <span id="receiptItemCount">0</span> Transaksi
+            </button>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -981,6 +1041,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="app.js?v=20260731_hotfix"></script>
+  <!-- Tesseract.js OCR for Receipt Photo Input -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+
+  <script src="app.js?v=20260802_photo"></script>
 </body>
 </html>

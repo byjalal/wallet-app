@@ -1109,6 +1109,14 @@ function populateFormDropdowns() {
   accSelect.innerHTML = accOptionsHtml;
   targetAccSelect.innerHTML = accOptionsHtml;
   accFilter.innerHTML = `<option value="ALL">Semua Dompet</option>` + state.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+
+  // Receipt photo panel dropdowns
+  const receiptCat = document.getElementById('receiptCategory');
+  if (receiptCat) receiptCat.innerHTML = expCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const receiptAcc = document.getElementById('receiptAccount');
+  if (receiptAcc) receiptAcc.innerHTML = state.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+  const receiptDate = document.getElementById('receiptDate');
+  if (receiptDate && !receiptDate.value) receiptDate.value = getTodayDateStr();
 }
 
 // ==========================================
@@ -1663,10 +1671,27 @@ function setupEventListeners() {
 
   // Add Transaction Modal
   const txModal = document.getElementById('txModal');
+  const resetTxPhotoState = () => {
+    const fileInput = document.getElementById('receiptFileInput');
+    const preview = document.getElementById('receiptPreview');
+    const runBtn = document.getElementById('runOcrBtn');
+    const status = document.getElementById('ocrStatus');
+    const section = document.getElementById('receiptItemsSection');
+    const list = document.getElementById('receiptItemsList');
+    _parsedReceiptItems = [];
+    if (fileInput) fileInput.value = '';
+    if (preview) { preview.src = ''; preview.style.display = 'none'; }
+    if (runBtn) runBtn.disabled = true;
+    if (status) status.style.display = 'none';
+    if (section) section.style.display = 'none';
+    if (list) list.innerHTML = '';
+  };
   const openTxModalFunc = () => {
     document.getElementById('txForm').reset();
     document.getElementById('txDate').value = getTodayDateStr();
     document.getElementById('txAmountHelper').style.display = 'none';
+    window._setTxMode('manual');
+    resetTxPhotoState();
     txModal.style.display = '';
     txModal.classList.add('active');
   };
@@ -1676,6 +1701,30 @@ function setupEventListeners() {
       return;
     }
     openTxModalFunc();
+  };
+  window._openTxPhotoModal = function() {
+    if (state.isGuestMode) {
+      window._openAuthModal();
+      return;
+    }
+    openTxModalFunc();
+    window._setTxMode('photo');
+  };
+  window._setTxMode = function(mode) {
+    window._txMode = mode;
+    const manual = document.getElementById('txManualFields');
+    const photo = document.getElementById('txPhotoFields');
+    const saveBtn = document.getElementById('saveTxBtn');
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    if (manual) manual.style.display = mode === 'manual' ? '' : 'none';
+    if (photo) photo.style.display = mode === 'photo' ? '' : 'none';
+    if (saveBtn) saveBtn.style.display = mode === 'manual' ? '' : 'none';
+    if (mode === 'photo') {
+      const dateEl = document.getElementById('receiptDate');
+      if (dateEl && !dateEl.value) dateEl.value = getTodayDateStr();
+    }
   };
 
   const openAddTxBtn = document.getElementById('openAddTransactionBtn');
@@ -1687,6 +1736,7 @@ function setupEventListeners() {
   document.getElementById('txForm').addEventListener('submit', (e) => {
     e.preventDefault();
     console.log('[txForm] submit handler started');
+    if (window._txMode === 'photo') return;
     if (state.isGuestMode) {
       window._openAuthModal();
       return;
@@ -1727,6 +1777,239 @@ function setupEventListeners() {
     safeRender('populateFormDropdowns', populateFormDropdowns);
     console.log('[txForm] submit handler done');
   });
+
+  // ==============================================
+  // TAMBAH TRANSAKSI VIA FOTO (NOTA / RECEIPT OCR)
+  // ==============================================
+  let _parsedReceiptItems = [];
+  let _currentReceiptImage = null;
+  let _ocrWorker = null;
+
+  function _escHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function _updateOcrProgress(status, progress) {
+    const el = document.getElementById('ocrStatusText');
+    const fill = document.getElementById('ocrProgressFill');
+    if (!el || !fill) return;
+    const labels = {
+      'loading tesseract core': 'Memuat mesin OCR...',
+      'initializing tesseract': 'Menyiapkan mesin...',
+      'loading language traineddata': 'Memuat data bahasa...',
+      'initializing api': 'Menyiapkan API...',
+      'recognizing text': 'Mendeteksi tulisan...'
+    };
+    el.textContent = labels[status] || (status || 'Mendeteksi...');
+    if (status === 'recognizing text') {
+      fill.style.width = Math.round((progress || 0) * 100) + '%';
+    }
+  }
+
+  async function _getOcrWorker() {
+    if (_ocrWorker) return _ocrWorker;
+    if (typeof Tesseract === 'undefined') return null;
+    _ocrWorker = await Tesseract.createWorker('eng+ind', 1, {
+      logger: m => _updateOcrProgress(m.status, m.progress)
+    });
+    return _ocrWorker;
+  }
+
+  const _RECEIPT_SKIP = ['total', 'bayar', 'tunai', 'kembali', 'kembalian', 'subtotal', 'pajak', 'ppn', 'diskon', 'potongan', 'jumlah', 'item', 'qty', 'kuantitas', 'nota', 'tanggal', 'tgl', 'kasir', 'struk', 'terima kasih', 'selamat datang', 'member', 'eceran', 'grosir', 'barcode', 'harga', 'satuan', 'rp', 'stok', 'pelanggan', 'dpp', 'materai', 'service', 'pembulatan', 'voucher', 'member'];
+
+  function _parseIdrNum(str) {
+    if (str == null) return null;
+    const cleaned = String(str).replace(/rp/gi, '').replace(/[^0-9.,]/g, '');
+    if (!cleaned) return null;
+    const n = Number(cleaned.replace(/\./g, '').replace(',', '.'));
+    return isFinite(n) && n > 0 ? n : null;
+  }
+
+  function parseReceiptLines(text) {
+    const lines = String(text || '').split('\n').map(l => l.trim()).filter(Boolean);
+    const items = [];
+    lines.forEach(raw => {
+      const lower = raw.toLowerCase();
+      if (_RECEIPT_SKIP.some(w => lower.includes(w))) return;
+      const numMatches = raw.match(/\d[\d.,]*/g) || [];
+      if (!numMatches.length) return;
+
+      const lastNum = numMatches[numMatches.length - 1];
+      const lineTotal = _parseIdrNum(lastNum);
+      if (!lineTotal) return;
+
+      let qty = 1;
+      let unitPrice = null;
+      const qtyMatch = raw.match(/(\d{1,3})\s*[xX*]\s*(\d[\d.,]*)/);
+      if (qtyMatch) {
+        qty = parseInt(qtyMatch[1], 10) || 1;
+        unitPrice = _parseIdrNum(qtyMatch[2]);
+      }
+
+      let name = raw.slice(0, raw.lastIndexOf(lastNum)).trim();
+      name = name
+        .replace(/\d{1,3}\s*[xX*]\s*\d[\d.,]*/g, '')
+        .replace(/[|\-–—:;,=]+$/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+      if (!name || name.length < 2) return;
+      if (/^(barang|nama|produk|deskripsi|description)/i.test(name)) return;
+
+      const price = unitPrice || lineTotal;
+      items.push({
+        name,
+        qty,
+        unitPrice: price,
+        total: qty > 1 && unitPrice ? unitPrice * qty : lineTotal
+      });
+    });
+    return items;
+  }
+
+  function _updateReceiptCount() {
+    const el = document.getElementById('receiptItemCount');
+    if (el) el.textContent = _parsedReceiptItems.length;
+  }
+
+  function renderReceiptItems(items) {
+    _parsedReceiptItems = items.map(it => Object.assign({}, it));
+    const list = document.getElementById('receiptItemsList');
+    const section = document.getElementById('receiptItemsSection');
+    if (!list || !section) return;
+    section.style.display = '';
+    if (!_parsedReceiptItems.length) {
+      list.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">Tidak ada item yang terbaca. Coba foto yang lebih terang/jelas.</div>';
+    } else {
+      list.innerHTML = _parsedReceiptItems.map((it, i) => `
+        <div class="receipt-item-row" data-idx="${i}" style="display:flex; gap:6px; align-items:center;">
+          <input type="text" data-field="name" value="${_escHtml(it.name)}" placeholder="Nama item" style="flex:2; min-width:0;">
+          <input type="number" data-field="qty" value="${it.qty}" min="1" step="1" style="flex:0 0 52px; text-align:center;" title="Jumlah">
+          <input type="text" data-field="price" value="${it.total}" placeholder="Harga total" style="flex:1; min-width:60px;">
+          <button type="button" class="icon-btn-sm" data-del="${i}" title="Hapus baris" style="color: var(--rose); flex-shrink:0;"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+      `).join('');
+    }
+    _updateReceiptCount();
+  }
+
+  const receiptFileInput = document.getElementById('receiptFileInput');
+  const runOcrBtn = document.getElementById('runOcrBtn');
+  if (receiptFileInput) {
+    receiptFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1600;
+          const scale = Math.min(1, maxW / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          _currentReceiptImage = canvas;
+          const preview = document.getElementById('receiptPreview');
+          if (preview) { preview.src = canvas.toDataURL('image/jpeg', 0.9); preview.style.display = ''; }
+          if (runOcrBtn) runOcrBtn.disabled = false;
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (runOcrBtn) {
+    runOcrBtn.addEventListener('click', async () => {
+      if (!_currentReceiptImage) return;
+      if (state.isGuestMode) { window._openAuthModal(); return; }
+      runOcrBtn.disabled = true;
+      const status = document.getElementById('ocrStatus');
+      if (status) status.style.display = '';
+      const statusText = document.getElementById('ocrStatusText');
+      const fill = document.getElementById('ocrProgressFill');
+      if (fill) fill.style.width = '0%';
+      try {
+        const worker = await _getOcrWorker();
+        if (!worker) throw new Error('Mesin OCR tidak termuat. Periksa koneksi internet lalu muat ulang.');
+        const { data } = await worker.recognize(_currentReceiptImage);
+        renderReceiptItems(parseReceiptLines(data.text));
+      } catch (err) {
+        console.error('[Receipt OCR] error:', err);
+        if (statusText) statusText.textContent = 'Gagal mendeteksi teks: ' + err.message;
+      } finally {
+        runOcrBtn.disabled = false;
+      }
+    });
+  }
+
+  const receiptItemsList = document.getElementById('receiptItemsList');
+  if (receiptItemsList) {
+    receiptItemsList.addEventListener('input', (e) => {
+      const row = e.target.closest('.receipt-item-row');
+      const idx = row ? parseInt(row.dataset.idx, 10) : -1;
+      const field = e.target.dataset.field;
+      if (idx >= 0 && field && _parsedReceiptItems[idx]) {
+        if (field === 'qty') {
+          _parsedReceiptItems[idx].qty = parseInt(e.target.value, 10) || 1;
+        } else {
+          _parsedReceiptItems[idx][field] = e.target.value;
+        }
+      }
+    });
+    receiptItemsList.addEventListener('click', (e) => {
+      const del = e.target.closest('[data-del]');
+      if (!del) return;
+      const idx = parseInt(del.dataset.del, 10);
+      if (idx >= 0) {
+        _parsedReceiptItems.splice(idx, 1);
+        renderReceiptItems(_parsedReceiptItems);
+      }
+    });
+  }
+
+  const addReceiptBtn = document.getElementById('addReceiptItemsBtn');
+  if (addReceiptBtn) {
+    addReceiptBtn.addEventListener('click', () => {
+      if (state.isGuestMode) { window._openAuthModal(); return; }
+      const category = document.getElementById('receiptCategory').value;
+      const account = document.getElementById('receiptAccount').value;
+      const date = document.getElementById('receiptDate').value;
+      let added = 0;
+      _parsedReceiptItems.forEach(it => {
+        const name = String(it.name || '').trim();
+        const amount = Number(String(it.total || '').replace(/[^0-9.]/g, '')) || 0;
+        if (!name || amount <= 0) return;
+        state.addTransaction({
+          type: 'EXPENSE',
+          amount,
+          date,
+          category,
+          account,
+          targetAccount: '',
+          note: name + (it.qty > 1 ? ' (x' + it.qty + ')' : '')
+        });
+        added++;
+      });
+      if (added > 0) {
+        txModal.classList.remove('active');
+        txModal.style.display = 'none';
+        const safeRender = (name, fn) => { try { fn(); } catch (err) { console.error('[Receipt] ' + name + ' error:', err); } };
+        safeRender('renderDashboard', renderDashboard);
+        safeRender('renderTransactionsTable', renderTransactionsTable);
+        safeRender('renderAccounts', renderAccounts);
+        safeRender('renderBudgetsAndGoals', renderBudgetsAndGoals);
+        safeRender('populateFormDropdowns', populateFormDropdowns);
+      } else {
+        const statusText = document.getElementById('ocrStatusText');
+        if (statusText) statusText.textContent = 'Tidak ada item valid untuk ditambahkan.';
+      }
+    });
+  }
 
   // Account Modal
   const accModal = document.getElementById('accountModal');

@@ -2191,3 +2191,47 @@ body.light-theme ::-webkit-scrollbar-thumb {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- Transaction input mode switcher (Manual / Via Foto) --- */
+.mode-btn {
+  padding: 10px 8px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.mode-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.mode-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* Receipt photo item rows */
+#receiptItemsList input {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+#receiptItemsList input:focus {
+  border-color: var(--primary);
+}
