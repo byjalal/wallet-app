@@ -1789,7 +1789,8 @@ function setupEventListeners() {
   }
 
   const _GEMINI_MODELS = {
-    'gemini-2.5-flash-lite': 'gemini-2.5-flash-lite',
+    'gemini-2.5-flash': 'gemini-2.5-flash',
+    'gemini-2.5-pro': 'gemini-2.5-pro',
     'gemini-2.0-flash': 'gemini-2.0-flash',
     'gemini-1.5-flash': 'gemini-1.5-flash'
   };
@@ -1799,7 +1800,7 @@ function setupEventListeners() {
   }
 
   function _getGeminiModel() {
-    return localStorage.getItem('wallet_gemini_model') || 'gemini-2.5-flash-lite';
+    return localStorage.getItem('wallet_gemini_model') || 'gemini-2.5-flash';
   }
 
   function _parseGeminiJson(text) {
@@ -2050,6 +2051,45 @@ function setupEventListeners() {
       localStorage.removeItem('wallet_gemini_key');
       if (geminiKeyInput) geminiKeyInput.value = '';
       if (geminiKeyStatus) geminiKeyStatus.textContent = 'API key dihapus. Tambahkan kembali bila perlu.';
+    });
+  }
+
+  const testGeminiBtn = document.getElementById('testGeminiBtn');
+  if (testGeminiBtn) {
+    testGeminiBtn.addEventListener('click', async () => {
+      if (!geminiKeyInput || !geminiKeyStatus) return;
+      const key = geminiKeyInput.value.trim() || _getGeminiKey();
+      const model = geminiModelSelect ? geminiModelSelect.value : _getGeminiModel();
+      if (!key) {
+        geminiKeyStatus.textContent = 'Isi API key dulu, lalu klik Uji Koneksi.';
+        return;
+      }
+      geminiKeyStatus.textContent = 'Menguji koneksi dengan ' + model + '...';
+      testGeminiBtn.disabled = true;
+      try {
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Balas hanya dengan satu kata: OK' }] }] })
+        });
+        if (!res.ok) {
+          let t = '';
+          try { t = (await res.text()).slice(0, 220); } catch (e) {}
+          geminiKeyStatus.textContent = 'Gagal (' + res.status + ') — model ' + model + ': ' + t;
+          geminiKeyStatus.style.color = 'var(--rose)';
+          return;
+        }
+        const data = await res.json();
+        const parts = (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+        const reply = parts.map(p => p.text || '').join('').slice(0, 40) || 'OK';
+        geminiKeyStatus.textContent = 'Berhasil! Model ' + model + ' aktif (jawaban: ' + reply + ').';
+        geminiKeyStatus.style.color = '#10b981';
+      } catch (e) {
+        geminiKeyStatus.textContent = 'Gagal terhubung: ' + e.message;
+        geminiKeyStatus.style.color = 'var(--rose)';
+      } finally {
+        testGeminiBtn.disabled = false;
+      }
     });
   }
 
