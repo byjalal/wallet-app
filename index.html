@@ -378,15 +378,15 @@
           <div class="form-group">
             <label for="geminiModelSelect">Model Gemini</label>
             <select id="geminiModelSelect">
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash (recommended)</option>
-              <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+              <option value="">— Pilih model (klik Muat Model) —</option>
             </select>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="btn btn-primary" id="saveGeminiKeyBtn">
               <i class="fa-solid fa-floppy-disk"></i> Simpan
+            </button>
+            <button class="btn btn-secondary" id="loadGeminiModelsBtn">
+              <i class="fa-solid fa-list"></i> Muat Model
             </button>
             <button class="btn btn-secondary" id="testGeminiBtn">
               <i class="fa-solid fa-vial"></i> Uji Koneksi
@@ -1078,6 +1078,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="app.js?v=20260803_gemini404"></script>
+  <script src="app.js?v=20260803_modelslist"></script>
 </body>
 </html>

@@ -1788,19 +1788,52 @@ function setupEventListeners() {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  const _GEMINI_MODELS = {
-    'gemini-2.5-flash': 'gemini-2.5-flash',
-    'gemini-2.5-pro': 'gemini-2.5-pro',
-    'gemini-2.0-flash': 'gemini-2.0-flash',
-    'gemini-1.5-flash': 'gemini-1.5-flash'
-  };
-
   function _getGeminiKey() {
     return localStorage.getItem('wallet_gemini_key') || '';
   }
 
   function _getGeminiModel() {
-    return localStorage.getItem('wallet_gemini_model') || 'gemini-2.5-flash';
+    const sel = document.getElementById('geminiModelSelect');
+    if (sel && sel.value) return sel.value;
+    return localStorage.getItem('wallet_gemini_model') || '';
+  }
+
+  function _populateGeminiModels(models) {
+    const sel = document.getElementById('geminiModelSelect');
+    if (!sel) return;
+    if (!models.length) {
+      sel.innerHTML = '<option value="">Tidak ada model tersedia</option>';
+      return;
+    }
+    sel.innerHTML = models.map(m => '<option value="' + m + '">' + m + '</option>').join('');
+    const saved = localStorage.getItem('wallet_gemini_model');
+    if (saved && models.includes(saved)) {
+      sel.value = saved;
+    } else {
+      sel.value = models[0];
+    }
+  }
+
+  async function _fetchGeminiModels(key) {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(key));
+    if (!res.ok) {
+      let t = '';
+      try { t = (await res.text()).slice(0, 200); } catch (e) {}
+      throw new Error('Gagal memuat model (' + res.status + '): ' + t);
+    }
+    const data = await res.json();
+    const models = (data.models || [])
+      .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+      .map(m => String(m.name).replace(/^models\//, ''));
+    const score = (m) => {
+      let s = 0;
+      if (/flash/i.test(m)) s += 20;
+      if (/pro/i.test(m)) s += 5;
+      if (/preview/i.test(m)) s -= 3;
+      return s;
+    };
+    models.sort((a, b) => score(b) - score(a));
+    return models;
   }
 
   function _parseGeminiJson(text) {
@@ -1844,6 +1877,7 @@ function setupEventListeners() {
     };
 
     const model = _getGeminiModel();
+    if (!model) throw new Error('Belum ada model dipilih. Buka Pengaturan → Deteksi Nota AI, klik "Muat Model", pilih model, lalu Simpan.');
     let lastErr = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) {
@@ -2028,9 +2062,38 @@ function setupEventListeners() {
   if (geminiModelSelect) geminiModelSelect.value = _getGeminiModel();
   if (geminiKeyStatus) {
     geminiKeyStatus.textContent = _getGeminiKey()
-      ? 'API key tersimpan di perangkat ini (AI aktif).'
+      ? 'API key tersimpan di perangkat ini. Klik "Muat Model" untuk melihat model yang tersedia.'
       : 'Belum ada API key. Tambahkan agar fitur Foto Nota bekerja.';
   }
+
+  const loadGeminiModelsBtn = document.getElementById('loadGeminiModelsBtn');
+  if (loadGeminiModelsBtn) {
+    loadGeminiModelsBtn.addEventListener('click', async () => {
+      if (!geminiKeyInput || !geminiKeyStatus) return;
+      const key = geminiKeyInput.value.trim() || _getGeminiKey();
+      if (!key) {
+        geminiKeyStatus.textContent = 'Isi API key dulu, lalu klik Muat Model.';
+        return;
+      }
+      geminiKeyStatus.textContent = 'Memuat daftar model dari Google...';
+      geminiKeyStatus.style.color = 'var(--text-muted)';
+      loadGeminiModelsBtn.disabled = true;
+      try {
+        const models = await _fetchGeminiModels(key);
+        _populateGeminiModels(models);
+        geminiKeyStatus.textContent = models.length
+          ? 'Ditemukan ' + models.length + ' model. Pilih yang aktif, lalu klik Uji Koneksi.'
+          : 'Tidak ada model generateContent untuk key ini.';
+        geminiKeyStatus.style.color = models.length ? '#10b981' : 'var(--rose)';
+      } catch (e) {
+        geminiKeyStatus.textContent = 'Gagal memuat model: ' + e.message;
+        geminiKeyStatus.style.color = 'var(--rose)';
+      } finally {
+        loadGeminiModelsBtn.disabled = false;
+      }
+    });
+  }
+
   const saveGeminiKeyBtn = document.getElementById('saveGeminiKeyBtn');
   if (saveGeminiKeyBtn) {
     saveGeminiKeyBtn.addEventListener('click', () => {
@@ -2062,6 +2125,10 @@ function setupEventListeners() {
       const model = geminiModelSelect ? geminiModelSelect.value : _getGeminiModel();
       if (!key) {
         geminiKeyStatus.textContent = 'Isi API key dulu, lalu klik Uji Koneksi.';
+        return;
+      }
+      if (!model) {
+        geminiKeyStatus.textContent = 'Belum ada model dipilih. Klik "Muat Model" dulu untuk melihat model yang tersedia.';
         return;
       }
       geminiKeyStatus.textContent = 'Menguji koneksi dengan ' + model + '...';
