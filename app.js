@@ -1788,10 +1788,18 @@ function setupEventListeners() {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  const _GEMINI_MODEL = 'gemini-2.0-flash';
+  const _GEMINI_MODELS = {
+    'gemini-2.5-flash-lite': 'gemini-2.5-flash-lite',
+    'gemini-2.0-flash': 'gemini-2.0-flash',
+    'gemini-1.5-flash': 'gemini-1.5-flash'
+  };
 
   function _getGeminiKey() {
     return localStorage.getItem('wallet_gemini_key') || '';
+  }
+
+  function _getGeminiModel() {
+    return localStorage.getItem('wallet_gemini_model') || 'gemini-2.5-flash-lite';
   }
 
   function _parseGeminiJson(text) {
@@ -1811,6 +1819,15 @@ function setupEventListeners() {
     }).filter(it => it.total > 0);
   }
 
+  function _geminiErrorMessage(status, text) {
+    if (status === 429) {
+      return 'Kuota Gemini terlampaui (429). Tunggu 1 menit lalu coba lagi, atau ganti model lain di Pengaturan → Deteksi Nota AI. Jika terus terjadi, cek kuota di aistudio.google.com atau aktifkan billing.';
+    }
+    if (status === 400) return 'Permintaan ditolak AI (400): ' + text;
+    if (status === 403) return 'API key ditolak (403). Periksa kembali kunci di Pengaturan → Deteksi Nota AI.';
+    return 'Gemini error (' + status + '): ' + text;
+  }
+
   async function _detectWithGemini(canvas) {
     const key = _getGeminiKey();
     if (!key) throw new Error('Gemini API key belum diatur. Buka Pengaturan → Deteksi Nota AI (Gemini).');
@@ -1824,20 +1841,39 @@ function setupEventListeners() {
         ]
       }]
     };
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + _GEMINI_MODEL + ':generateContent?key=' + encodeURIComponent(key), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) {
-      let errMsg = 'Gemini error (' + res.status + ')';
-      try { errMsg += ': ' + (await res.text()).slice(0, 200); } catch (e) {}
-      throw new Error(errMsg);
+
+    const model = _getGeminiModel();
+    let lastErr = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        const waitMs = attempt === 1 ? 8000 : 20000;
+        await new Promise(r => setTimeout(r, waitMs));
+      }
+      let res;
+      try {
+        res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      } catch (e) {
+        lastErr = new Error('Gagal terhubung ke Gemini. Periksa koneksi internet: ' + e.message);
+        continue;
+      }
+      if (!res.ok) {
+        const errText = (await res.text().catch(() => '')).slice(0, 300);
+        if (res.status === 429 && attempt < 2) {
+          lastErr = new Error(_geminiErrorMessage(429, errText));
+          continue;
+        }
+        throw new Error(_geminiErrorMessage(res.status, errText));
+      }
+      const data = await res.json();
+      const parts = (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+      const text = parts.map(p => p.text || '').join('');
+      return _parseGeminiJson(text);
     }
-    const data = await res.json();
-    const parts = (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
-    const text = parts.map(p => p.text || '').join('');
-    return _parseGeminiJson(text);
+    throw lastErr || new Error('Gagal menganalisis nota.');
   }
 
   function _updateReceiptCount() {
@@ -1985,8 +2021,10 @@ function setupEventListeners() {
 
   // Gemini API key settings
   const geminiKeyInput = document.getElementById('geminiKeyInput');
+  const geminiModelSelect = document.getElementById('geminiModelSelect');
   const geminiKeyStatus = document.getElementById('geminiKeyStatus');
   if (geminiKeyInput && _getGeminiKey()) geminiKeyInput.value = _getGeminiKey();
+  if (geminiModelSelect) geminiModelSelect.value = _getGeminiModel();
   if (geminiKeyStatus) {
     geminiKeyStatus.textContent = _getGeminiKey()
       ? 'API key tersimpan di perangkat ini (AI aktif).'
@@ -2002,7 +2040,8 @@ function setupEventListeners() {
         return;
       }
       localStorage.setItem('wallet_gemini_key', val);
-      if (geminiKeyStatus) geminiKeyStatus.textContent = 'API key tersimpan. Sekarang fitur Foto Nota memakai AI Gemini.';
+      if (geminiModelSelect) localStorage.setItem('wallet_gemini_model', geminiModelSelect.value);
+      if (geminiKeyStatus) geminiKeyStatus.textContent = 'API key tersimpan. Sekarang fitur Foto Nota memakai AI Gemini (model: ' + (geminiModelSelect ? geminiModelSelect.value : '') + ').';
     });
   }
   const clearGeminiKeyBtn = document.getElementById('clearGeminiKeyBtn');
