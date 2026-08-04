@@ -258,6 +258,7 @@ function initUI() {
   updateHideNominalUI();
   updateSyncStatusWidget();
   updateAuthUI();
+  initSettingsNav();
   renderDashboard();
   renderTransactionsTable();
   renderBudgetsAndGoals();
@@ -320,6 +321,43 @@ function switchTab(tabId) {
   if (tabId === 'dashboard') {
     renderDashboard();
   }
+}
+
+// Switch settings sub-tab (Profile page)
+function switchSettingsTab(tabId) {
+  document.querySelectorAll('.settings-nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.settingsTab === tabId);
+  });
+  document.querySelectorAll('.settings-pane').forEach(pane => {
+    pane.classList.toggle('active', pane.id === tabId);
+  });
+}
+
+// Hide settings nav buttons whose pane has no visible content (e.g. guest mode)
+function updateSettingsNav() {
+  document.querySelectorAll('.settings-nav-btn').forEach(btn => {
+    const target = document.getElementById(btn.dataset.settingsTab);
+    let hasVisible = false;
+    if (target) {
+      target.querySelectorAll('.section-card').forEach(card => {
+        if (getComputedStyle(card).display !== 'none') hasVisible = true;
+      });
+    }
+    btn.style.display = hasVisible ? '' : 'none';
+  });
+
+  const activeBtn = document.querySelector('.settings-nav-btn.active');
+  if (activeBtn && getComputedStyle(activeBtn).display === 'none') {
+    const firstVisible = Array.from(document.querySelectorAll('.settings-nav-btn')).find(b => b.style.display !== 'none');
+    if (firstVisible) switchSettingsTab(firstVisible.dataset.settingsTab);
+  }
+}
+
+function initSettingsNav() {
+  document.querySelectorAll('.settings-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchSettingsTab(btn.dataset.settingsTab));
+  });
+  updateSettingsNav();
 }
 
 function updateSyncStatusWidget() {
@@ -401,12 +439,12 @@ function renderDashboard() {
       const sign = t.type === 'INCOME' ? '+' : (t.type === 'EXPENSE' ? '-' : '');
       const signStr = sign ? sign + ' ' : '';
       return `
-        <div class="recent-tx-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--glass-border);">
-          <span style="width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: ${cat.color}15; color: ${cat.color}; font-size: 14px; flex-shrink: 0;" title="${cat.name}">
+        <div class="recent-tx-item">
+          <span class="tx-item-icon" style="background: ${cat.color}15; color: ${cat.color};" title="${cat.name}">
             <i class="fa-solid ${cat.icon}"></i>
           </span>
-          <span style="flex: 1; font-size: 13px; color: var(--text-muted);">${formatDateDDMMYY(t.date)}</span>
-          <span class="amount-display ${typeClass}" style="font-size: 14px; white-space: nowrap;">${signStr}${formatMoney(t.amount)}</span>
+          <span class="recent-tx-date">${formatDateDDMMYY(t.date)}</span>
+          <span class="amount-display ${typeClass}">${signStr}${formatMoney(t.amount)}</span>
         </div>
       `;
     }).join('');
@@ -445,16 +483,16 @@ function renderDashboardAccounts() {
     return;
   }
   list.innerHTML = state.accounts.map(a => `
-    <div class="dash-account-item" style="display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--glass-border);">
-      <div style="width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: ${a.color || '#6366f1'}15; color: ${a.color || '#6366f1'}; font-size: 14px; flex-shrink: 0;">
+    <div class="dash-account-item">
+      <div class="dash-account-icon" style="background: ${a.color || '#6366f1'}15; color: ${a.color || '#6366f1'};">
         <i class="fa-solid ${a.icon || 'fa-wallet'}"></i>
       </div>
-      <div style="flex: 1; min-width: 0;">
-        <div style="font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${a.name}</div>
-        <div style="font-size: 11px; color: var(--text-muted);">${a.type}</div>
+      <div class="dash-account-meta">
+        <div class="dash-account-name">${a.name}</div>
+        <div class="dash-account-type">${a.type}</div>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <div style="font-size: 14px; font-weight: 500; white-space: nowrap;">${formatMoneyMasked(a.balance)}</div>
+      <div class="dash-account-right">
+        <div class="dash-account-balance">${formatMoneyMasked(a.balance)}</div>
         <div class="account-menu-wrapper">
           <button class="icon-btn-sm account-menu-btn" onclick="window._toggleAccMenu(event, '${a.id}')" title="Opsi Dompet">
             <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -526,19 +564,19 @@ function renderTransactionsTable() {
     const isOpen = idx === 0;
 
     return `
-      <div class="tx-month-group" style="border-bottom: 1px solid var(--glass-border);">
-        <div class="tx-month-header" onclick="toggleTxMonth('${mk}')" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; cursor: pointer; user-select: none;">
-          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
-            <span id="tx-month-chev-${mk}" class="tx-month-chevron" style="color: var(--text-muted); font-size: 12px; transition: transform .2s; flex-shrink: 0; ${isOpen ? '' : 'transform: rotate(-90deg);'}">
+      <div class="tx-month-group">
+        <div class="tx-month-header" onclick="toggleTxMonth('${mk}')">
+          <div class="tx-month-heading">
+            <span id="tx-month-chev-${mk}" class="tx-month-chevron" style="${isOpen ? '' : 'transform: rotate(-90deg);'}">
               <i class="fa-solid fa-chevron-down"></i>
             </span>
-            <div style="flex: 1; min-width: 0;">
-              <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">${formatMonthKey(mk)}</div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                <span style="color: #10b981; font-weight: 600;">+${formatMoney(income)}</span>
-                <span style="margin: 0 5px;">&middot;</span>
-                <span style="color: #f43f5e; font-weight: 600;">-${formatMoney(expense)}</span>
-                <span style="margin: 0 5px;">&middot;</span>
+            <div class="tx-month-meta">
+              <div class="tx-month-name">${formatMonthKey(mk)}</div>
+              <div class="tx-month-summary">
+                <span class="tx-sum-income">+${formatMoney(income)}</span>
+                <span class="tx-sum-sep">&middot;</span>
+                <span class="tx-sum-expense">-${formatMoney(expense)}</span>
+                <span class="tx-sum-sep">&middot;</span>
                 ${txs.length} transaksi
               </div>
             </div>
@@ -584,50 +622,41 @@ function renderTxItem(t) {
   const signStr = sign ? sign + ' ' : '';
 
   return `
-      <div class="tx-item-card" style="border-bottom: 1px solid var(--glass-border);">
-        <div class="tx-main-row" onclick="toggleTxDetail('${t.id}')" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; cursor: pointer;">
-          <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-            <span style="width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: ${cat.color}15; color: ${cat.color}; font-size: 14px; flex-shrink: 0;" title="${cat.name}">
+      <div class="tx-item-card">
+        <div class="tx-main-row" onclick="toggleTxDetail('${t.id}')">
+          <div class="tx-main-info">
+            <span class="tx-item-icon" style="background: ${cat.color}15; color: ${cat.color};" title="${cat.name}">
               <i class="fa-solid ${cat.icon}"></i>
             </span>
-            <div style="min-width: 0; flex: 1;">
-              <div style="font-size: 13px; font-weight: 500; color: var(--text-main); line-height: 1.2;">${formatDateDDMMYY(t.date)}</div>
-              ${t.note ? `<div style="font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px;">${t.note}</div>` : ''}
+            <div class="tx-item-meta">
+              <div class="tx-item-date">${formatDateDDMMYY(t.date)}</div>
+              ${t.note ? `<div class="tx-item-note">${t.note}</div>` : ''}
             </div>
           </div>
-          <div style="text-align: right; flex-shrink: 0;">
-            <span class="amount-display ${typeClass}" style="font-size: 14px; font-weight: 600; white-space: nowrap;">${signStr}${formatMoney(t.amount)}</span>
+          <div class="tx-item-right">
+            <span class="amount-display ${typeClass}">${signStr}${formatMoney(t.amount)}</span>
           </div>
         </div>
-        <div class="tx-detail-row" id="tx-detail-${t.id}" style="display: none; padding-top: 6px; padding-bottom: 10px;">
-          <div class="tx-detail-content" style="padding: 12px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); position: relative;">
-            
-            <!-- Icon-only Trash Button -->
-            <button class="icon-btn-sm" onclick="event.stopPropagation(); deleteTx('${t.id}')" title="Hapus Transaksi" style="position: absolute; right: 10px; top: 10px; color: var(--rose); width: 32px; height: 32px; border: 1px solid rgba(244, 63, 94, 0.2); background: rgba(244, 63, 94, 0.08); border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 13px;">
+        <div class="tx-detail-row" id="tx-detail-${t.id}" style="display: none;">
+          <div class="tx-detail-content">
+            <button class="icon-btn-sm tx-detail-delete" onclick="event.stopPropagation(); deleteTx('${t.id}')" title="Hapus Transaksi">
               <i class="fa-solid fa-trash-can"></i>
             </button>
-
-            <!-- Kategori -->
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px; padding-right: 36px;">
-              <span class="text-muted" style="font-size: 12px; width: 65px; flex-shrink: 0;">Kategori</span>
-              <span style="font-size: 13px; font-weight: 600; color: ${cat.color}; flex: 1;">${cat.name}</span>
+            <div class="tx-detail-line">
+              <span class="tx-detail-label">Kategori</span>
+              <span class="tx-detail-value" style="color: ${cat.color};">${cat.name}</span>
             </div>
-
-            <!-- Catatan -->
-            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; padding-right: 36px;">
-              <span class="text-muted" style="font-size: 12px; width: 65px; flex-shrink: 0;">Catatan</span>
-              <span style="font-size: 13px; font-weight: 500; color: var(--text-main); flex: 1; word-break: break-word; line-height: 1.3;">${t.note || '-'}</span>
+            <div class="tx-detail-line">
+              <span class="tx-detail-label">Catatan</span>
+              <span class="tx-detail-value tx-detail-note">${t.note || '-'}</span>
             </div>
-
-            <!-- Dompet -->
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span class="text-muted" style="font-size: 12px; width: 65px; flex-shrink: 0;">Dompet</span>
-              <span class="account-tag" style="font-size: 12px; font-weight: 600; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
+            <div class="tx-detail-line">
+              <span class="tx-detail-label">Dompet</span>
+              <span class="account-tag tx-detail-account">
                 <i class="fa-solid ${acc.icon || 'fa-wallet'}" style="color: var(--primary);"></i> ${acc.name}
-                ${targetAcc ? ` <i class="fa-solid fa-arrow-right" style="font-size: 10px; margin: 0 2px; color: var(--text-muted);"></i> <i class="fa-solid ${targetAcc.icon || 'fa-wallet'}" style="color: var(--cyan);"></i> ${targetAcc.name}` : ''}
+                ${targetAcc ? ` <i class="fa-solid fa-arrow-right"></i> <i class="fa-solid ${targetAcc.icon || 'fa-wallet'}" style="color: var(--cyan);"></i> ${targetAcc.name}` : ''}
               </span>
             </div>
-
           </div>
         </div>
       </div>
@@ -2859,6 +2888,7 @@ function updateAuthUI() {
     }
 
     _initSpreadsheetGroup();
+    updateSettingsNav();
   } else {
     document.body.classList.add('guest-mode');
     document.body.classList.remove('logged-in');
@@ -2868,6 +2898,7 @@ function updateAuthUI() {
     const firebaseSection = document.getElementById('firebaseSectionCard');
     if (firebaseSection) firebaseSection.style.setProperty('display', 'none', 'important');
     _initSpreadsheetGroup();
+    updateSettingsNav();
     if (guestModeBanner) guestModeBanner.style.display = 'flex';
 
     if (headerStatus) {

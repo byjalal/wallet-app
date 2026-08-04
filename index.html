@@ -82,12 +82,12 @@
       <!-- TAB 1: DASHBOARD -->
       <section class="tab-content active" id="tab-dashboard">
         <!-- Guest Mode Read-Only Banner -->
-        <div id="guestModeBanner" class="read-only-banner" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 16px; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--amber);">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-eye" style="font-size: 16px;"></i>
+        <div id="guestModeBanner" class="read-only-banner" style="display: none;">
+          <div class="read-only-banner-text">
+            <i class="fa-solid fa-eye"></i>
             <span><strong>Mode Tamu (Read-Only)</strong> — Pengunjung hanya dapat melihat data. Login untuk mengedit.</span>
           </div>
-          <button class="btn btn-sm btn-primary" onclick="window._openAuthModal()" style="white-space: nowrap;">Login</button>
+          <button class="btn btn-sm btn-primary read-only-banner-btn" onclick="window._openAuthModal()">Login</button>
         </div>
 
         <!-- Stat Cards Carousel -->
@@ -97,7 +97,7 @@
               <div class="stat-header">
                 <span>Total Saldo Bersih</span>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <button class="icon-btn-sm toggle-hide-nominal" onclick="window.toggleHideNominalState()" title="Intip / Sembunyikan Nominal (5s)" style="width: 34px; height: 34px; font-size: 14px; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: var(--primary); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;">
+                  <button class="icon-btn-sm toggle-hide-nominal nominal-toggle-btn" onclick="window.toggleHideNominalState()" title="Intip / Sembunyikan Nominal (5s)">
                     <i class="fa-solid fa-eye-slash hide-nominal-icon"></i>
                   </button>
                   <div class="stat-icon-wrapper"><i class="fa-solid fa-vault"></i></div>
@@ -248,11 +248,9 @@
           </div>
 
           <!-- Date Filters -->
-          <div class="filter-group" style="margin-top: 10px; width: 100%; border-top: 1px solid var(--glass-border); padding-top: 14px;">
-            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-              <span class="text-muted" style="font-size: 12px; font-weight: 600;">Periode:</span>
-              <input type="month" id="txMonthFilter" title="Pilih Bulan" style="background: var(--bg-card); border: 1px solid var(--glass-border); padding: 6px 10px; border-radius: var(--radius-md); color: var(--text-main); font-size: 13px; outline: none; box-shadow: var(--shadow-sm); max-width: 140px;">
-            </div>
+          <div class="filter-period">
+            <span class="filter-period-label">Periode</span>
+            <input type="month" id="txMonthFilter" title="Pilih Bulan">
           </div>
         </div>
 
@@ -304,265 +302,270 @@
 
       <!-- TAB 5: PROFILE & PENGATURAN -->
       <section class="tab-content" id="tab-profile">
-        <div class="top-header">
-          <div class="header-title">
+        <div class="settings-header">
+          <div class="settings-avatar">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="settings-header-text">
             <h1>Profile & Pengaturan</h1>
-            <p>Atur preferensi aplikasi dan integrasi data</p>
+            <p>Kelola akun, tampilan, kategori, dan integrasi data dengan rapi</p>
           </div>
         </div>
 
-        <!-- AKUN PEMILIK & PIN SECURITY -->
-        <div class="section-card glass-card mt-4">
-          <div class="card-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-            <h3><i class="fa-solid fa-user-shield text-emerald"></i> Akses & Keamanan</h3>
-            <span id="profileAuthBadge" class="badge"></span>
-          </div>
-          <div id="profileAuthInfo" style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
-            <!-- Dynamic info -->
-          </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn btn-primary" id="profileRegisterLoginBtn" onclick="window._openAuthModal()">
-              <i class="fa-solid fa-key"></i> <span id="profileAuthBtnText">Atur / Login</span>
+        <div class="settings-layout">
+          <!-- SUB-NAVIGASI SETTINGS -->
+          <aside class="settings-nav" id="settingsNav">
+            <button class="settings-nav-btn active" data-settings-tab="settings-account" type="button">
+              <i class="fa-solid fa-user-shield"></i>
+              <span>Akun & Keamanan</span>
             </button>
-            <button class="btn btn-secondary" id="profileLogoutBtn" onclick="window._logoutOwner()" style="display: none;">
-              <i class="fa-solid fa-right-from-bracket"></i> Logout
+            <button class="settings-nav-btn" data-settings-tab="settings-appearance" type="button">
+              <i class="fa-solid fa-palette"></i>
+              <span>Tampilan</span>
             </button>
-          </div>
-        </div>
+            <button class="settings-nav-btn" data-settings-tab="settings-categories" type="button">
+              <i class="fa-solid fa-tags"></i>
+              <span>Kategori</span>
+            </button>
+            <button class="settings-nav-btn" data-settings-tab="settings-integrations" type="button">
+              <i class="fa-solid fa-plug"></i>
+              <span>Integrasi & Cloud</span>
+            </button>
+            <button class="settings-nav-btn" data-settings-tab="settings-data" type="button">
+              <i class="fa-solid fa-database"></i>
+              <span>Data & Admin</span>
+            </button>
+          </aside>
 
-        <!-- PREFERENSI TAMPILAN & MATA UANG -->
-        <div class="section-card glass-card mt-4">
-          <div class="card-header" style="margin-bottom: 16px;">
-            <h3><i class="fa-solid fa-sliders text-amber"></i> Tampilan & Preferensi</h3>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
-            <div>
-              <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Tema Aplikasi</label>
-              <div class="theme-settings" style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" id="profileThemeBtnDark" data-theme="dark" style="flex: 1; justify-content: center;">
-                  <i class="fa-solid fa-moon"></i> Dark
-                </button>
-                <button class="btn btn-secondary" id="profileThemeBtnLight" data-theme="light" style="flex: 1; justify-content: center;">
-                  <i class="fa-solid fa-sun text-amber"></i> Light
-                </button>
+          <!-- KONTEN SETTINGS -->
+          <div class="settings-content">
+
+            <!-- PANE: AKUN & KEAMANAN -->
+            <div class="settings-pane active" id="settings-account">
+              <div class="section-card glass-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-user-shield text-emerald"></i> Akses & Keamanan</h3>
+                  <span id="profileAuthBadge" class="badge"></span>
+                </div>
+                <p class="settings-desc" id="profileAuthInfo"><!-- Dynamic info --></p>
+                <div class="settings-actions">
+                  <button class="btn btn-primary" id="profileRegisterLoginBtn" onclick="window._openAuthModal()">
+                    <i class="fa-solid fa-key"></i> <span id="profileAuthBtnText">Atur / Login</span>
+                  </button>
+                  <button class="btn btn-secondary" id="profileLogoutBtn" onclick="window._logoutOwner()" style="display: none;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Mata Uang Utama</label>
-              <div class="currency-selector" style="display: flex; align-items: center; gap: 10px;">
-                <select id="currencySelect" style="width: 100%; background: var(--bg-card); border: 1px solid var(--glass-border); padding: 10px 12px; border-radius: var(--radius-md); color: var(--text-main); font-size: 14px;">
-                  <option value="IDR">IDR - Rupiah (Rp)</option>
-                  <option value="USD">USD - Dollar ($)</option>
-                  <option value="EUR">EUR - Euro (€)</option>
-                </select>
+            <!-- PANE: TAMPILAN -->
+            <div class="settings-pane" id="settings-appearance">
+              <div class="section-card glass-card">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-palette text-amber"></i> Tampilan & Preferensi</h3>
+                </div>
+                <div class="settings-grid">
+                  <div class="settings-field">
+                    <label class="settings-label">Tema Aplikasi</label>
+                    <div class="theme-settings">
+                      <button class="btn btn-secondary" id="profileThemeBtnDark" data-theme="dark">
+                        <i class="fa-solid fa-moon"></i> Dark
+                      </button>
+                      <button class="btn btn-secondary" id="profileThemeBtnLight" data-theme="light">
+                        <i class="fa-solid fa-sun text-amber"></i> Light
+                      </button>
+                    </div>
+                  </div>
+                  <div class="settings-field">
+                    <label class="settings-label">Mata Uang Utama</label>
+                    <select id="currencySelect">
+                      <option value="IDR">IDR - Rupiah (Rp)</option>
+                      <option value="USD">USD - Dollar ($)</option>
+                      <option value="EUR">EUR - Euro (€)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- DETEKSI NOTA AI (GEMINI) -->
-        <div class="section-card glass-card mt-4 owner-only">
-          <div class="card-header" style="margin-bottom: 12px;">
-            <h3><i class="fa-solid fa-wand-magic-sparkles text-cyan"></i> Deteksi Nota AI (Gemini)</h3>
-          </div>
-          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
-            Membaca foto nota dengan AI Google Gemini — jauh lebih akurat daripada OCR biasa. Buat API key gratis di
-            <strong>aistudio.google.com</strong> (menu <em>Get API key</em>), lalu tempel di sini. Kunci hanya tersimpan di perangkat ini.
-            Jika muncul error 429 (kuota), tunggu 1 menit lalu coba lagi, atau pilih model lain.
-          </p>
-          <div class="form-group">
-            <label for="geminiKeyInput">Gemini API Key</label>
-            <input type="password" id="geminiKeyInput" placeholder="AIza..." autocomplete="off" style="font-family: monospace;">
-          </div>
-          <div class="form-group">
-            <label for="geminiModelSelect">Model Gemini</label>
-            <select id="geminiModelSelect">
-              <option value="">— Pilih model (klik Muat Model) —</option>
-            </select>
-          </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn btn-primary" id="saveGeminiKeyBtn">
-              <i class="fa-solid fa-floppy-disk"></i> Simpan
-            </button>
-            <button class="btn btn-secondary" id="loadGeminiModelsBtn">
-              <i class="fa-solid fa-list"></i> Muat Model
-            </button>
-            <button class="btn btn-secondary" id="testGeminiBtn">
-              <i class="fa-solid fa-vial"></i> Uji Koneksi
-            </button>
-            <button class="btn btn-secondary" id="clearGeminiKeyBtn">
-              <i class="fa-solid fa-trash-can"></i> Hapus
-            </button>
-          </div>
-          <div id="geminiKeyStatus" style="margin-top: 8px; font-size: 12px; color: var(--text-muted);"></div>
-        </div>
-
-        <!-- KELOLA KATEGORI (OWNER ONLY) -->
-        <div class="section-card glass-card mt-4 owner-only">
-          <div class="card-header" style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
-            <h3><i class="fa-solid fa-tags text-violet"></i> Kategori Transaksi</h3>
-            <button class="btn btn-sm btn-primary" id="openAddCategoryBtn">
-              <i class="fa-solid fa-plus"></i> Tambah
-            </button>
-          </div>
-          <div class="category-type-switcher" style="display: flex; gap: 8px; margin-bottom: 14px;">
-            <button class="period-btn active" id="catTypeExpBtn" onclick="window._switchCategoryTab('EXPENSE')">Pengeluaran</button>
-            <button class="period-btn" id="catTypeIncBtn" onclick="window._switchCategoryTab('INCOME')">Pemasukan</button>
-          </div>
-          <div id="categoryManagerList" style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- Dynamic category list -->
-          </div>
-        </div>
-
-        <!-- FIREBASE REALTIME CLOUD DATABASE (DESKTOP ONLY & OWNER ONLY) -->
-        <div class="section-card glass-card mt-4 owner-only desktop-only" id="firebaseSectionCard">
-          <div class="card-header accordion-header" onclick="window.toggleFirebaseCard()" style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between;">
-            <h3 style="display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-fire text-rose"></i> Firebase Cloud Database (Sync 24/7)
-              <span id="firebaseCardChev" style="transition: transform .2s; font-size: 12px; color: var(--text-muted); flex-shrink: 0;"><i class="fa-solid fa-chevron-down"></i></span>
-            </h3>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <button class="icon-btn-sm" id="firebaseEditBtn" onclick="event.stopPropagation(); window._toggleFirebaseEdit()" title="Edit Config" style="width: 30px; height: 30px; font-size: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--primary); border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-              <span id="firebaseStatusBadge" class="badge badge-warning">Nonaktif</span>
-            </div>
-          </div>
-
-          <div id="firebaseBody" style="display: none;">
-            <p style="font-size: 13px; color: var(--text-muted); margin: 12px 0 14px; line-height: 1.4;">
-              Hubungkan dengan Google Firebase agar data tersimpan aman di cloud dan tersinkronisasi otomatis di semua HP/Laptop Anda.
-            </p>
-
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block;">Firebase Config / Database URL</label>
-              <textarea id="firebaseConfigInput" readonly placeholder='Tempelkan Firebase Config / Database URL di sini (Contoh: https://nama-app-default-rtdb.firebaseio.com)' rows="3" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 12px; font-family: monospace;"></textarea>
+            <!-- PANE: KATEGORI -->
+            <div class="settings-pane" id="settings-categories">
+              <div class="section-card glass-card owner-only">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-tags text-violet"></i> Kategori Transaksi</h3>
+                  <button class="btn btn-sm btn-primary" id="openAddCategoryBtn">
+                    <i class="fa-solid fa-plus"></i> Tambah
+                  </button>
+                </div>
+                <div class="category-type-switcher">
+                  <button class="period-btn active" id="catTypeExpBtn" onclick="window._switchCategoryTab('EXPENSE')">Pengeluaran</button>
+                  <button class="period-btn" id="catTypeIncBtn" onclick="window._switchCategoryTab('INCOME')">Pemasukan</button>
+                </div>
+                <div id="categoryManagerList">
+                  <!-- Dynamic category list -->
+                </div>
+              </div>
             </div>
 
-            <div style="display: flex; gap: 10px;">
-              <button class="btn btn-primary" id="saveFirebaseBtn" onclick="window._saveFirebaseConfig()" style="display: none;">
-                <i class="fa-solid fa-cloud-arrow-up"></i> Simpan & Hubungkan
-              </button>
-              <button class="btn btn-secondary" id="disconnectFirebaseBtn" onclick="window._disconnectFirebase()" style="display: none;">
-                <i class="fa-solid fa-plug-circle-xmark"></i> Putuskan
-              </button>
-            </div>
-          </div>
-        </div>
+            <!-- PANE: INTEGRASI & CLOUD -->
+            <div class="settings-pane" id="settings-integrations">
+              <!-- DETEKSI NOTA AI (GEMINI) -->
+              <div class="section-card glass-card owner-only">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-wand-magic-sparkles text-cyan"></i> Deteksi Nota AI (Gemini)</h3>
+                </div>
+                <p class="settings-desc">
+                  Membaca foto nota dengan AI Google Gemini — jauh lebih akurat daripada OCR biasa. Buat API key gratis di
+                  <strong>aistudio.google.com</strong> (menu <em>Get API key</em>), lalu tempel di sini. Kunci hanya tersimpan di perangkat ini.
+                  Jika muncul error 429 (kuota), tunggu 1 menit lalu coba lagi, atau pilih model lain.
+                </p>
+                <div class="form-group">
+                  <label for="geminiKeyInput">Gemini API Key</label>
+                  <input type="password" id="geminiKeyInput" placeholder="AIza..." autocomplete="off" style="font-family: monospace;">
+                </div>
+                <div class="form-group">
+                  <label for="geminiModelSelect">Model Gemini</label>
+                  <select id="geminiModelSelect">
+                    <option value="">— Pilih model (klik Muat Model) —</option>
+                  </select>
+                </div>
+                <div class="settings-actions">
+                  <button class="btn btn-primary" id="saveGeminiKeyBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> Simpan
+                  </button>
+                  <button class="btn btn-secondary" id="loadGeminiModelsBtn">
+                    <i class="fa-solid fa-list"></i> Muat Model
+                  </button>
+                  <button class="btn btn-secondary" id="testGeminiBtn">
+                    <i class="fa-solid fa-vial"></i> Uji Koneksi
+                  </button>
+                  <button class="btn btn-secondary" id="clearGeminiKeyBtn">
+                    <i class="fa-solid fa-trash-can"></i> Hapus
+                  </button>
+                </div>
+                <div id="geminiKeyStatus" class="settings-status"></div>
+              </div>
 
-        <!-- ADMIN PANEL (ADMIN ONLY) -->
-        <div class="section-card glass-card mt-4 owner-only desktop-only" id="adminPanelSection" style="display: none;">
-          <div class="card-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-            <h3><i class="fa-solid fa-user-gear text-primary"></i> Admin — Kelola Pengguna</h3>
-            <button class="icon-btn-sm" onclick="window._loadAdminUsers()" title="Muat Ulang">
-              <i class="fa-solid fa-rotate"></i>
-            </button>
-          </div>
+              <!-- FIREBASE REALTIME CLOUD DATABASE (DESKTOP ONLY & OWNER ONLY) -->
+              <div class="section-card glass-card owner-only desktop-only" id="firebaseSectionCard">
+                <div class="card-header accordion-header" onclick="window.toggleFirebaseCard()">
+                  <h3>
+                    <i class="fa-solid fa-fire text-rose"></i> Firebase Cloud Database (Sync 24/7)
+                    <span id="firebaseCardChev" class="accordion-chev"><i class="fa-solid fa-chevron-down"></i></span>
+                  </h3>
+                  <div class="settings-header-actions">
+                    <button class="icon-btn-sm" id="firebaseEditBtn" onclick="event.stopPropagation(); window._toggleFirebaseEdit()" title="Edit Config">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <span id="firebaseStatusBadge" class="badge badge-warning">Nonaktif</span>
+                  </div>
+                </div>
 
-          <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 14px;">
-            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: block;">Tambah Pengguna Baru</label>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <input type="text" id="adminNewUsername" placeholder="Username (contoh: Andi)" style="flex: 1; min-width: 140px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 13px;">
-              <input type="password" id="adminNewPin" placeholder="PIN 4-6 digit" inputmode="numeric" pattern="[0-9]*" maxlength="6" style="flex: 0 0 130px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-main); font-size: 13px; letter-spacing: 2px;">
-              <button class="btn btn-primary" onclick="window._adminAddUser()">
-                <i class="fa-solid fa-user-plus"></i> Tambah
-              </button>
-            </div>
-            <div id="adminAddMsg" style="margin-top: 8px; font-size: 12px; color: var(--text-muted);"></div>
-          </div>
+                <div id="firebaseBody" style="display: none;">
+                  <p class="settings-desc">
+                    Hubungkan dengan Google Firebase agar data tersimpan aman di cloud dan tersinkronisasi otomatis di semua HP/Laptop Anda.
+                  </p>
+                  <div class="form-group">
+                    <label for="firebaseConfigInput">Firebase Config / Database URL</label>
+                    <textarea id="firebaseConfigInput" readonly placeholder='Tempelkan Firebase Config / Database URL di sini (Contoh: https://nama-app-default-rtdb.firebaseio.com)' rows="3" style="font-family: monospace;"></textarea>
+                  </div>
+                  <div class="settings-actions">
+                    <button class="btn btn-primary" id="saveFirebaseBtn" onclick="window._saveFirebaseConfig()" style="display: none;">
+                      <i class="fa-solid fa-cloud-arrow-up"></i> Simpan & Hubungkan
+                    </button>
+                    <button class="btn btn-secondary" id="disconnectFirebaseBtn" onclick="window._disconnectFirebase()" style="display: none;">
+                      <i class="fa-solid fa-plug-circle-xmark"></i> Putuskan
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-          <div id="adminUserList" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto;">
-            <!-- Dynamic user list -->
-          </div>
-        </div>
+              <!-- SYNC STATUS GOOGLE SHEETS (accordion header) -->
+              <div class="section-card glass-card owner-only">
+                <div class="card-header accordion-header" onclick="window.toggleSpreadsheetGroup()">
+                  <h3>
+                    <i class="fa-solid fa-cloud text-cyan"></i> Status Sinkronisasi Google Sheets
+                    <span id="spreadsheetGroupChev" class="accordion-chev"><i class="fa-solid fa-chevron-down"></i></span>
+                  </h3>
+                </div>
+                <div class="sync-status-card" id="syncStatusWidget">
+                  <div class="status-indicator offline"></div>
+                  <div class="status-info">
+                    <span class="status-title">Google Sheets</span>
+                    <span class="status-sub" id="syncStatusText">Local Only</span>
+                  </div>
+                  <button class="icon-btn-sm" id="quickSyncBtn" title="Sync ke Google Sheets">
+                    <i class="fa-solid fa-rotate"></i>
+                  </button>
+                </div>
+              </div>
 
-        <!-- SYNC STATUS (accordion header) -->
-        <div class="section-card glass-card mt-4 owner-only">
-          <div class="card-header accordion-header" onclick="window.toggleSpreadsheetGroup()" style="margin-bottom: 12px; cursor: pointer; user-select: none;">
-            <h3 style="display: flex; align-items: center; gap: 8px; width: 100%;">
-              <i class="fa-solid fa-cloud text-cyan"></i> Status Sinkronisasi Google Sheets
-              <span id="spreadsheetGroupChev" style="transition: transform .2s; font-size: 12px; color: var(--text-muted); margin-left: auto; flex-shrink: 0;"><i class="fa-solid fa-chevron-down"></i></span>
-            </h3>
-          </div>
+              <div id="spreadsheetGroupBody">
+                <div class="spreadsheet-banner glass-card">
+                  <div class="banner-content">
+                    <div class="banner-badge"><i class="fa-solid fa-file-excel"></i> Integrasi Data Eksternal</div>
+                    <h2>Pusat Sinkronisasi Spreadsheet</h2>
+                    <p>Kelola data keuangan Anda dengan kebebasan penuh. Ekspor ke Excel, impor transaksi lama, atau hubungkan ke Google Sheets.</p>
+                  </div>
+                  <div class="banner-illustration">
+                    <i class="fa-solid fa-table-cells-large"></i>
+                  </div>
+                </div>
 
-          <div class="sync-status-card" id="syncStatusWidget" style="margin: 0;">
-            <div class="status-indicator offline"></div>
-            <div class="status-info">
-              <span class="status-title">Google Sheets</span>
-              <span class="status-sub" id="syncStatusText">Local Only</span>
-            </div>
-            <button class="icon-btn-sm" id="quickSyncBtn" title="Sync ke Google Sheets">
-              <i class="fa-solid fa-rotate"></i>
-            </button>
-          </div>
-        </div>
+                <div class="spreadsheet-options-grid">
+                  <!-- Card 1: Export -->
+                  <div class="hub-card glass-card">
+                    <div class="hub-icon text-cyan"><i class="fa-solid fa-file-export"></i></div>
+                    <h3>Ekspor ke Excel / CSV</h3>
+                    <p>Unduh seluruh data transaksi, dompet, dan alokasi anggaran Anda ke dalam spreadsheet berformat rapi.</p>
+                    <div class="hub-actions">
+                      <button class="btn btn-primary btn-full" id="exportCsvBtn">
+                        <i class="fa-solid fa-download"></i> Unduh File CSV
+                      </button>
+                    </div>
+                  </div>
 
-        <div id="spreadsheetGroupBody">
-          <div class="spreadsheet-banner glass-card mt-4">
-            <div class="banner-content">
-              <div class="banner-badge"><i class="fa-solid fa-file-excel"></i> Integrasi Data Eksternal</div>
-              <h2>Pusat Sinkronisasi Spreadsheet</h2>
-              <p>Kelola data keuangan Anda dengan kebebasan penuh. Ekspor ke Excel, impor transaksi lama, atau hubungkan ke Google Sheets.</p>
-            </div>
-            <div class="banner-illustration">
-              <i class="fa-solid fa-table-cells-large"></i>
-            </div>
-          </div>
+                  <!-- Card 2: Import -->
+                  <div class="hub-card glass-card">
+                    <div class="hub-icon text-violet"><i class="fa-solid fa-file-import"></i></div>
+                    <h3>Impor dari Spreadsheet</h3>
+                    <p>Unggah file `.csv` transaksi lama Anda. Sistem akan memetakan data secara otomatis.</p>
+                    <div class="hub-actions">
+                      <button class="btn btn-secondary btn-full" id="openImportModalBtn">
+                        <i class="fa-solid fa-upload"></i> Unggah File Spreadsheet
+                      </button>
+                    </div>
+                  </div>
 
-          <div class="spreadsheet-options-grid mt-4">
-          <!-- Card 1: Export -->
-          <div class="hub-card glass-card">
-            <div class="hub-icon text-cyan"><i class="fa-solid fa-file-export"></i></div>
-            <h3>Ekspor ke Excel / CSV</h3>
-            <p>Unduh seluruh data transaksi, dompet, dan alokasi anggaran Anda ke dalam spreadsheet berformat rapi.</p>
-            <div class="hub-actions">
-              <button class="btn btn-primary btn-full" id="exportCsvBtn">
-                <i class="fa-solid fa-download"></i> Unduh File CSV
-              </button>
-            </div>
-          </div>
+                  <!-- Card 3: Google Sheets Webhook -->
+                  <div class="hub-card glass-card highlight-border">
+                    <div class="hub-icon text-emerald"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                    <h3>Google Sheets Real-time Sync</h3>
+                    <p>Hubungkan aplikasi ini ke Google Sheet Anda via Webhook Apps Script sederhana. Transaksi otomatis tersimpan di Google Drive.</p>
+                    <div class="hub-actions">
+                      <button class="btn btn-emerald btn-full" id="openWebhookConfigBtn">
+                        <i class="fa-solid fa-plug"></i> Pengaturan Google Sheets Sync
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-          <!-- Card 2: Import -->
-          <div class="hub-card glass-card">
-            <div class="hub-icon text-violet"><i class="fa-solid fa-file-import"></i></div>
-            <h3>Impor dari Spreadsheet</h3>
-            <p>Unggah file `.csv` transaksi lama Anda. Sistem akan memetakan data secara otomatis.</p>
-            <div class="hub-actions">
-              <button class="btn btn-secondary btn-full" id="openImportModalBtn">
-                <i class="fa-solid fa-upload"></i> Unggah File Spreadsheet
-              </button>
-            </div>
-          </div>
+                <!-- Google Sheets Apps Script Setup Guide -->
+                <div class="section-card glass-card">
+                  <div class="card-header">
+                    <h3><i class="fa-solid fa-code text-cyan"></i> Panduan Singkat Setup Google Sheets Apps Script</h3>
+                  </div>
+                  <div class="script-guide-body">
+                    <ol class="setup-steps">
+                      <li>Buat <strong>Google Sheets</strong> baru di Google Drive Anda (beri nama misal: <em>"Wallet App Database"</em>).</li>
+                      <li>Buka menu <strong>Extensions > Apps Script</strong>.</li>
+                      <li>Hapus semua kode yang ada, lalu salin dan tempel kode berikut:</li>
+                    </ol>
 
-          <!-- Card 3: Google Sheets Webhook -->
-          <div class="hub-card glass-card highlight-border">
-            <div class="hub-icon text-emerald"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-            <h3>Google Sheets Real-time Sync</h3>
-            <p>Hubungkan aplikasi ini ke Google Sheet Anda via Webhook Apps Script sederhana. Transaksi otomatis tersimpan di Google Drive.</p>
-            <div class="hub-actions">
-              <button class="btn btn-emerald btn-full" id="openWebhookConfigBtn">
-                <i class="fa-solid fa-plug"></i> Pengaturan Google Sheets Sync
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Google Sheets Apps Script Setup Guide -->
-        <div class="section-card glass-card mt-4">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-code text-cyan"></i> Panduan Singkat Setup Google Sheets Apps Script</h3>
-          </div>
-          <div class="script-guide-body">
-            <ol class="setup-steps">
-              <li>Buat <strong>Google Sheets</strong> baru di Google Drive Anda (beri nama misal: <em>"Wallet App Database"</em>).</li>
-              <li>Buka menu <strong>Extensions > Apps Script</strong>.</li>
-              <li>Hapus semua kode yang ada, lalu salin dan tempel kode berikut:</li>
-            </ol>
-
-            <div class="code-box">
-              <button class="btn-copy" id="copyAppsScriptBtn"><i class="fa-solid fa-copy"></i> Salin Kode</button>
-              <pre><code id="appsScriptCodeText">function doPost(e) {
+                    <div class="code-box">
+                      <button class="btn-copy" id="copyAppsScriptBtn"><i class="fa-solid fa-copy"></i> Salin Kode</button>
+                      <pre><code id="appsScriptCodeText">function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -592,31 +595,65 @@
       .setMimeType(ContentService.MimeType.JSON);
   }
 }</code></pre>
+                    </div>
+
+                    <ol class="setup-steps mt-4" start="4">
+                      <li>Klik <strong>Deploy > New deployment</strong>. Pilih type <strong>Web App</strong>.</li>
+                      <li>Atur <em>Execute as: Me</em> dan <em>Who has access: Anyone</em>. Klik <strong>Deploy</strong>.</li>
+                      <li>Salin <strong>Web App URL</strong> yang dihasilkan, lalu tempelkan di menu Pengaturan Google Sheets Sync!</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <ol class="setup-steps mt-4" start="4">
-              <li>Klik <strong>Deploy > New deployment</strong>. Pilih type <strong>Web App</strong>.</li>
-              <li>Atur <em>Execute as: Me</em> dan <em>Who has access: Anyone</em>. Klik <strong>Deploy</strong>.</li>
-              <li>Salin <strong>Web App URL</strong> yang dihasilkan, lalu tempelkan di menu Pengaturan Google Sheets Sync!</li>
-            </ol>
-          </div>
-        </div>
-        </div>
-        <!-- RESET DATA / MULAI DARI AWAL -->
-        <div class="section-card glass-card mt-6 owner-only" style="border-color: rgba(244, 63, 94, 0.3);">
-          <div class="card-header" style="margin-bottom: 12px;">
-            <h3 class="text-rose"><i class="fa-solid fa-triangle-exclamation"></i> Reset Data / Mulai dari Awal</h3>
-          </div>
-          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-            Ingin mencatat keuangan dari awal lagi? Anda dapat mengosongkan riwayat transaksi atau menghapus seluruh data dompet & transaksi secara permanen.
-          </p>
-          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <button class="btn btn-secondary" id="resetTransactionsOnlyBtn" style="border-color: rgba(244, 63, 94, 0.4); color: var(--rose);">
-              <i class="fa-solid fa-broom"></i> Reset Transaksi & Saldo 0
-            </button>
-            <button class="btn btn-primary" id="resetAllDataBtn" style="background: #ef4444; border-color: #ef4444;">
-              <i class="fa-solid fa-trash-arrow-up"></i> Reset Total (Mulai dari Nol)
-            </button>
+            <!-- PANE: DATA & ADMIN -->
+            <div class="settings-pane" id="settings-data">
+              <!-- ADMIN PANEL (ADMIN ONLY) -->
+              <div class="section-card glass-card owner-only desktop-only" id="adminPanelSection" style="display: none;">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-user-gear text-primary"></i> Admin — Kelola Pengguna</h3>
+                  <button class="icon-btn-sm" onclick="window._loadAdminUsers()" title="Muat Ulang">
+                    <i class="fa-solid fa-rotate"></i>
+                  </button>
+                </div>
+
+                <div class="admin-add-box">
+                  <label class="settings-label">Tambah Pengguna Baru</label>
+                  <div class="admin-add-row">
+                    <input type="text" id="adminNewUsername" placeholder="Username (contoh: Andi)">
+                    <input type="password" id="adminNewPin" placeholder="PIN 4-6 digit" inputmode="numeric" pattern="[0-9]*" maxlength="6" style="letter-spacing: 2px;">
+                    <button class="btn btn-primary" onclick="window._adminAddUser()">
+                      <i class="fa-solid fa-user-plus"></i> Tambah
+                    </button>
+                  </div>
+                  <div id="adminAddMsg" class="settings-status"></div>
+                </div>
+
+                <div id="adminUserList" class="admin-user-list">
+                  <!-- Dynamic user list -->
+                </div>
+              </div>
+
+              <!-- RESET DATA / MULAI DARI AWAL -->
+              <div class="section-card glass-card danger-card owner-only">
+                <div class="card-header">
+                  <h3 class="text-rose"><i class="fa-solid fa-triangle-exclamation"></i> Reset Data / Mulai dari Awal</h3>
+                </div>
+                <p class="settings-desc">
+                  Ingin mencatat keuangan dari awal lagi? Anda dapat mengosongkan riwayat transaksi atau menghapus seluruh data dompet & transaksi secara permanen.
+                </p>
+                <div class="settings-actions">
+                  <button class="btn btn-secondary" id="resetTransactionsOnlyBtn" style="border-color: rgba(244, 63, 94, 0.4); color: var(--rose);">
+                    <i class="fa-solid fa-broom"></i> Reset Transaksi & Saldo 0
+                  </button>
+                  <button class="btn btn-primary" id="resetAllDataBtn" style="background: #ef4444; border-color: #ef4444;">
+                    <i class="fa-solid fa-trash-arrow-up"></i> Reset Total (Mulai dari Nol)
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
