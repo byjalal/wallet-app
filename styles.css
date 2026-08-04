@@ -2192,6 +2192,13 @@ body.light-theme ::-webkit-scrollbar-thumb {
   }
 }
 
+/* --- Mobile: hide header login/logout buttons when already logged in --- */
+@media (max-width: 768px) {
+  body.logged-in .header-user-status {
+    display: none !important;
+  }
+}
+
 /* --- Transaction input mode switcher (Manual / Via Foto) --- */
 .mode-btn {
   padding: 10px 8px;

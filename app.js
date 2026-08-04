@@ -267,6 +267,12 @@ function initUI() {
   window._initFirebaseSync();
   if (_isAdmin() && state.isLoggedIn) window._loadAdminUsers();
 
+  const returnTab = sessionStorage.getItem('wallet_return_tab');
+  if (returnTab) {
+    sessionStorage.removeItem('wallet_return_tab');
+    if (document.getElementById('tab-' + returnTab)) switchTab(returnTab);
+  }
+
   if (state.isLoggedIn && window._syncOnLogin) {
     window._syncOnLogin().then(() => {
       renderDashboard();
@@ -1776,6 +1782,7 @@ function setupEventListeners() {
     safeRender('renderBudgetsAndGoals', renderBudgetsAndGoals);
     safeRender('populateFormDropdowns', populateFormDropdowns);
     console.log('[txForm] submit handler done');
+    _scheduleReload();
   });
 
   // ==============================================
@@ -2047,6 +2054,7 @@ function setupEventListeners() {
         safeRender('renderAccounts', renderAccounts);
         safeRender('renderBudgetsAndGoals', renderBudgetsAndGoals);
         safeRender('populateFormDropdowns', populateFormDropdowns);
+        _scheduleReload();
       } else {
         const statusText = document.getElementById('ocrStatusText');
         if (statusText) statusText.textContent = 'Tidak ada item valid untuk ditambahkan.';
@@ -2695,6 +2703,13 @@ function resetWalletDataToDefaults() {
   localStorage.setItem('wallet_goals', JSON.stringify(state.goals));
 }
 
+function _scheduleReload() {
+  const activeBtn = document.querySelector('.nav-btn.active');
+  const tab = activeBtn && activeBtn.dataset.tab ? activeBtn.dataset.tab : 'dashboard';
+  sessionStorage.setItem('wallet_return_tab', tab);
+  setTimeout(() => { location.reload(); }, 250);
+}
+
 window._openAuthModal = function() {
   const modal = document.getElementById('authModal');
   if (!modal) return;
@@ -2792,6 +2807,7 @@ function updateAuthUI() {
 
   if (state.isLoggedIn) {
     document.body.classList.remove('guest-mode');
+    document.body.classList.add('logged-in');
     document.querySelectorAll('.owner-only:not(.desktop-only)').forEach(el => el.style.setProperty('display', 'block', 'important'));
     if (window.innerWidth >= 768) {
       document.querySelectorAll('.owner-only.desktop-only').forEach(el => el.style.setProperty('display', 'block', 'important'));
@@ -2845,6 +2861,7 @@ function updateAuthUI() {
     _initSpreadsheetGroup();
   } else {
     document.body.classList.add('guest-mode');
+    document.body.classList.remove('logged-in');
     document.querySelectorAll('.owner-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
     const adminPanel = document.getElementById('adminPanelSection');
     if (adminPanel) adminPanel.style.setProperty('display', 'none', 'important');
