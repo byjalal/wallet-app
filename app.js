@@ -253,7 +253,7 @@ function initUI() {
     console.error('[UnhandledPromiseRejection]', e.reason);
   });
   console.log('[initUI] App initializing...');
-  if (state.isGuestMode) resetWalletDataToDefaults();
+  if (state.isGuestMode && !state.isRegistered) resetWalletDataToDefaults();
   applyTheme();
   updateHideNominalUI();
   updateSyncStatusWidget();
@@ -3064,10 +3064,11 @@ window._syncOnLogin = async function() {
         state.save();
         return;
       }
+      const localTxsForMerge = localUpdate > 0 ? state.transactions : [];
       console.log('[Firebase] _syncOnLogin: loading existing cloud data');
       _isFirebaseRemoteUpdate = true;
       state.accounts = data.accounts || state.accounts;
-      state.transactions = _resolveRemoteTransactions(state.transactions, data.transactions);
+      state.transactions = _resolveRemoteTransactions(localTxsForMerge, data.transactions);
       state.budgets = data.budgets || state.budgets;
       state.goals = data.goals || state.goals;
       state.categories = data.categories || state.categories;
