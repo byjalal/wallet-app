@@ -1563,7 +1563,7 @@ function setupEventListeners() {
   const resetTxOnlyBtn = document.getElementById('resetTransactionsOnlyBtn');
   if (resetTxOnlyBtn) {
     resetTxOnlyBtn.addEventListener('click', () => {
-      if (confirm('Apakah Anda yakin ingin menghapus SELURUH riwayat transaksi dan mengosongkan saldo dompet menjadi Rp 0?')) {
+      if (confirm('PERINGATAN: Ini akan menghapus SEMUA transaksi dan mengosongkan saldo, lalu tersinkron ke SEMUA perangkat yang login dengan akun ini. Lanjutkan?')) {
         state.transactions = [];
         state.accounts.forEach(a => a.balance = 0);
         state.save();
@@ -1580,7 +1580,7 @@ function setupEventListeners() {
   const resetAllBtn = document.getElementById('resetAllDataBtn');
   if (resetAllBtn) {
     resetAllBtn.addEventListener('click', () => {
-      if (confirm('PERINGATAN: Ini akan menghapus SELURUH data Anda secara permanen dan mengembalikan aplikasi ke kondisi bersih awal. Lanjutkan?')) {
+      if (confirm('PERINGATAN: Ini akan menghapus SELURUH data Anda secara permanen (dan tersinkron ke semua perangkat), lalu mengembalikan aplikasi ke kondisi bersih awal. Lanjutkan?')) {
         localStorage.clear();
         location.reload();
       }
@@ -2933,10 +2933,21 @@ let _firebaseDb = null;
 let _isFirebaseRemoteUpdate = false;
 let _firebaseUnsubscribe = null;
 let _pendingSyncId = null;
+let _recentOwnSyncIds = [];
+let _syncTimer = null;
 
 function _getFirebaseUserPath() {
   if (!state.isLoggedIn || !state.username) return null;
   return 'users/' + state.username + '/wallet_data';
+}
+
+function _resolveRemoteTransactions(localTxs, remoteVal) {
+  if (remoteVal && typeof remoteVal === 'object' && remoteVal._empty === true) return [];
+  if (!Array.isArray(remoteVal)) return Array.isArray(localTxs) ? localTxs : [];
+  const localList = Array.isArray(localTxs) ? localTxs : [];
+  const remoteIds = new Set(remoteVal.map(t => t && t.id).filter(Boolean));
+  const localOnly = localList.filter(t => t && !remoteIds.has(t.id));
+  return localOnly.concat(remoteVal).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 }
 
 window._startFirebaseListener = function() {
@@ -2952,11 +2963,13 @@ window._startFirebaseListener = function() {
     const data = snapshot.val();
     if (!data) return;
 
-    if (_pendingSyncId && data.syncId === _pendingSyncId) {
-      console.log('[Firebase] echo of own push, normalizing _lastUpdate');
-      _pendingSyncId = null;
+    const ownEchoIdx = _recentOwnSyncIds.indexOf(data.syncId);
+    if (ownEchoIdx !== -1) {
+      _recentOwnSyncIds.splice(ownEchoIdx, 1);
+      if (data.syncId === _pendingSyncId) _pendingSyncId = null;
       state._lastUpdate = data.updatedAt || 0;
       localStorage.setItem('wallet_last_update', state._lastUpdate);
+      console.log('[Firebase] echo of own push, normalizing _lastUpdate');
       return;
     }
 
@@ -2969,7 +2982,7 @@ window._startFirebaseListener = function() {
     console.log('[Firebase] applying remote update (remote:', remoteUpdate, 'local:', localUpdate, ')');
     _isFirebaseRemoteUpdate = true;
     state.accounts = data.accounts || state.accounts;
-    state.transactions = data.transactions || [];
+    state.transactions = _resolveRemoteTransactions(state.transactions, data.transactions);
     state.budgets = data.budgets || state.budgets;
     state.goals = data.goals || state.goals;
     state.categories = data.categories || state.categories;
@@ -2997,26 +3010,39 @@ window._stopFirebaseListener = function() {
     _firebaseUnsubscribe = null;
   }
   _pendingSyncId = null;
+  _recentOwnSyncIds = [];
+  if (_syncTimer) {
+    clearTimeout(_syncTimer);
+    _syncTimer = null;
+  }
 };
 
 window._syncStateToFirebase = function() {
   if (_isFirebaseRemoteUpdate || !_firebaseDb || !state.isLoggedIn) return;
   const path = _getFirebaseUserPath();
   if (!path) return;
-  try {
-    _pendingSyncId = 'sync-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-    _firebaseDb.ref(path).set({
-      accounts: state.accounts,
-      transactions: state.transactions,
-      budgets: state.budgets,
-      goals: state.goals,
-      categories: state.categories,
-      updatedAt: firebase.database.ServerValue.TIMESTAMP,
-      syncId: _pendingSyncId
-    });
-  } catch (e) {
-    console.error('Firebase sync error:', e);
-  }
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    _syncTimer = null;
+    try {
+      _pendingSyncId = 'sync-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+      _recentOwnSyncIds.push(_pendingSyncId);
+      if (_recentOwnSyncIds.length > 5) _recentOwnSyncIds.shift();
+      _firebaseDb.ref(path).set({
+        accounts: state.accounts,
+        transactions: state.transactions.length > 0 ? state.transactions : { _empty: true },
+        budgets: state.budgets,
+        goals: state.goals,
+        categories: state.categories,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP,
+        syncId: _pendingSyncId
+      }).catch((e) => {
+        console.error('[Firebase] sync write failed:', e);
+      });
+    } catch (e) {
+      console.error('Firebase sync error:', e);
+    }
+  }, 300);
 };
 
 window._syncOnLogin = async function() {
@@ -3041,7 +3067,7 @@ window._syncOnLogin = async function() {
       console.log('[Firebase] _syncOnLogin: loading existing cloud data');
       _isFirebaseRemoteUpdate = true;
       state.accounts = data.accounts || state.accounts;
-      state.transactions = data.transactions || [];
+      state.transactions = _resolveRemoteTransactions(state.transactions, data.transactions);
       state.budgets = data.budgets || state.budgets;
       state.goals = data.goals || state.goals;
       state.categories = data.categories || state.categories;
@@ -3241,7 +3267,7 @@ window._loadAdminUsers = async function() {
     listEl.innerHTML = keys.map(u => {
       const info = users[u].info || {};
       const wd = users[u].wallet_data || {};
-      const txCount = (wd.transactions || []).length;
+      const txCount = Array.isArray(wd.transactions) ? wd.transactions.length : 0;
       const registeredAt = info.registeredAt ? new Date(info.registeredAt).toLocaleString('id-ID') : '—';
       const updatedAt = wd.updatedAt ? new Date(wd.updatedAt).toLocaleString('id-ID') : '—';
       const isAdminUser = _isAdmin(u);
