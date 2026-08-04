@@ -2920,11 +2920,11 @@ window._startFirebaseListener = function() {
     }
     console.log('[Firebase] applying remote update (remote:', remoteUpdate, 'local:', localUpdate, ')');
     _isFirebaseRemoteUpdate = true;
-    if (data.accounts) state.accounts = data.accounts;
-    if (data.transactions) state.transactions = data.transactions;
-    if (data.budgets) state.budgets = data.budgets;
-    if (data.goals) state.goals = data.goals;
-    if (data.categories) state.categories = data.categories;
+    state.accounts = data.accounts || state.accounts;
+    state.transactions = data.transactions || [];
+    state.budgets = data.budgets || state.budgets;
+    state.goals = data.goals || state.goals;
+    state.categories = data.categories || state.categories;
 
     state.save();
     state._lastUpdate = remoteUpdate;
@@ -2992,11 +2992,11 @@ window._syncOnLogin = async function() {
       }
       console.log('[Firebase] _syncOnLogin: loading existing cloud data');
       _isFirebaseRemoteUpdate = true;
-      if (data.accounts) state.accounts = data.accounts;
-      if (data.transactions) state.transactions = data.transactions;
-      if (data.budgets) state.budgets = data.budgets;
-      if (data.goals) state.goals = data.goals;
-      if (data.categories) state.categories = data.categories;
+      state.accounts = data.accounts || state.accounts;
+      state.transactions = data.transactions || [];
+      state.budgets = data.budgets || state.budgets;
+      state.goals = data.goals || state.goals;
+      state.categories = data.categories || state.categories;
       state.save();
       state._lastUpdate = remoteUpdate;
       localStorage.setItem('wallet_last_update', state._lastUpdate);
